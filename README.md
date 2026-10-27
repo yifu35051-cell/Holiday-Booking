@@ -1,14 +1,36 @@
 # Holiday Booking
 
-本 README 说明当前后端的运行方式、完成情况和待办事项。更新日期：2026-10-24。
+本 README 说明当前后端的运行方式、完成情况和待办事项。更新日期：2026-10-27。
 
-**当前状态：核心后端与本地模拟业务流程已实现，已有 30 项测试通过记录；真实 MySQL、支付宝沙箱和 SMTP 的环境联调尚未完成。** 验证时间及边界见第 4 节。
+**当前状态：核心后端与本地模拟业务流程已实现。用户提供的 2026-10-27 单模块报告中，42 项测试全部通过，数据库测试使用 Docker MySQL；这次集成阶段 9 项尚无运行记录。支付宝沙箱和真实 SMTP 联调尚未完成。** 历史验证见第 4 节；当前测试与浏览器访问的区别见[运行指南第 7 节](docs/运行指南.md#7-测试启动登录与-api-文档)。
+
+**当前开发路线：MySQL 在 Docker 容器中运行，暂不启用支付和邮件。** 请依次阅读：
+
+首次编辑根目录 .env.mysql（参照 [.env.mysql.example](.env.mysql.example)）后，每次只执行：
+
+~~~powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-Backend.ps1
+~~~
+
+脚本读取文件配置，启动 MySQL 并等待健康检查，再启动 Java；普通启动不要求管理员邮箱或密码。只有显式追加 -InitializeAdmin 才使用文件中的管理员配置。只检查配置可追加 -CheckOnly。
+
+1. [文档导航](docs/README.md)：统一入口及顾客、员工、管理员功能权限。
+2. [运行指南](docs/运行指南.md)：Docker MySQL、文件配置、一键启动和排错。
+3. [测试入口](docs/testing/README.md)：先单模块、再集成；每项列出功能、具体输入、预期与实际结果。实际结果待你运行后更新。
+
+第 2 节提供日常启动步骤；详细安装及排错请查阅上述专用文档。
 
 ## 1. 项目结构与技术栈
 
 ~~~text
 Holiday-Booking/
 ├── README.md                 当前运行说明与进度
+├── compose.mysql.yaml        本地开发用 MySQL 容器
+├── .env.mysql.example        数据库配置模板
+├── scripts/Start-Backend.ps1  数据库与 Java 后端一键启动
+├── scripts/Test-Backend.ps1   Java 测试模块选择、顺序执行和结果汇总
+├── scripts/backend-tests/   非支付、非邮件 HTTP 测试脚本
+├── results/                  每次 Java 测试的日志、逐类报告和汇总
 ├── backend/                  Spring Boot 后端
 │   ├── pom.xml               依赖与构建配置
 │   ├── mvnw.cmd              Windows Maven Wrapper
@@ -28,121 +50,116 @@ Holiday-Booking/
 | 认证与权限 | Spring Security、Spring Session JDBC、Session Cookie、CSRF |
 | 外部服务 | 支付宝官方 Java SDK、Spring Mail；本地支持 mock 支付与 log 通知 |
 | API 文档 | springdoc OpenAPI、Swagger UI |
-| 测试与格式 | JUnit、Mockito、H2、Testcontainers、Spotless |
+| 测试与格式 | JUnit、Mockito、MySQL 8.4 Testcontainers、Spotless；纯单元测试无需数据库 |
 
 后端为模块化单体。各业务模块内部按职责分层：api 处理 HTTP 和参数校验，application 编排用例与事务，domain 表达业务规则和仓储端口，infrastructure 实现数据库及外部服务访问。代码位于 [backend/src/main/java/com/holidaybooking/backend](backend/src/main/java/com/holidaybooking/backend)。
 
-完整需求与设计见 [开发技术文档](docs/Holiday-Booking-开发技术文档.md)。该文档包含规划内容；**当前版本、实现状态和运行方式以本 README 及代码为准**。
+完整需求与设计见 [开发技术文档](docs/design/Holiday-Booking-开发技术文档.md)。该文档包含规划内容；**当前版本、实现状态和运行方式以本 README 及代码为准**。
 
 ## 2. 启动当前后端
 
-### 2.1 环境准备
+### 2.1 首次配置
 
-- 安装 JDK 21，确保 JAVA_HOME 指向 JDK 目录，java 命令可用。
-- 准备可连接的 MySQL 8.4 实例，可以直接安装本地 MySQL。
-- 首次使用 Maven Wrapper 需要网络下载 Maven 和项目依赖，无需另行安装 Maven。
-- 本地运行使用模拟支付和日志通知，无需先配置 Docker、支付宝、微信或 SMTP。
-
-**本文所有 PowerShell 命令均在项目根目录 Holiday-Booking 执行。** 命令通过 -f 指定后端 pom.xml，无需切换到 backend 目录。
+安装 JDK 21 和 Docker Desktop（Linux containers），在项目根目录执行：
 
 ~~~powershell
-java -version
-.\backend\mvnw.cmd -f .\backend\pom.xml -version
+if (-not (Test-Path .\.env.mysql)) {
+    Copy-Item .\.env.mysql.example .\.env.mysql
+}
+notepad .\.env.mysql
 ~~~
 
-正常启动使用 MySQL；H2 仅供自动化测试，不会在 MySQL 连接失败时自动替代数据库。
+在文件中填写数据库密码和端口。管理员信息为可选项，普通启动忽略它们。已有配置时保留现有密码；修改文件不会重设已有数据卷中的数据库密码或已有管理员密码。
 
-### 2.2 首次准备数据库
+| 配置 | 作用 |
+| --- | --- |
+| MYSQL_ROOT_PASSWORD / MYSQL_PASSWORD | 数据库管理密码与应用连接密码 |
+| MYSQL_PORT | 宿主机数据库端口，默认 3307；脚本自动同步 Java 连接地址 |
+| SERVER_PORT | HTTP 端口，默认 8080 |
+| BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD | 仅 -InitializeAdmin 时要求同时填写；普通启动忽略 |
 
-在 MySQL 客户端使用有建库、建用户权限的账户执行以下 SQL，并替换示例密码。数据库和用户已存在时，使用已有配置即可，不要重复创建。
+管理员密码至少 12 字符，UTF-8 不超过 72 字节。详细格式及安装、初始化流程见 [Docker MySQL 本地开发流程](docs/运行指南.md)。
 
-~~~sql
-CREATE DATABASE holiday_booking
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_0900_ai_ci;
+### 2.2 每次启动
 
-CREATE USER 'holiday_booking'@'localhost'
-    IDENTIFIED BY 'REPLACE_WITH_LOCAL_DB_PASSWORD';
-
-GRANT ALL PRIVILEGES ON holiday_booking.*
-    TO 'holiday_booking'@'localhost';
-~~~
-
-这些是本地开发权限，包含 Flyway 建表权限。应用启动时自动执行数据库迁移，Hibernate 仅校验表结构，无需手动执行迁移 SQL。远程 MySQL 需按实际连接来源配置账户授权。
-
-### 2.3 配置并启动
-
-在项目根目录打开 PowerShell，替换密码后执行：
+所有命令从项目根目录执行：
 
 ~~~powershell
-$env:SPRING_PROFILES_ACTIVE = 'local'
-$env:DB_URL = 'jdbc:mysql://localhost:3306/holiday_booking?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true'
-$env:DB_USERNAME = 'holiday_booking'
-$env:DB_PASSWORD = 'REPLACE_WITH_LOCAL_DB_PASSWORD'
-
-# 本地模拟模式：不发生真实付款或邮件发送。
-$env:PAYMENT_MODE = 'mock'
-$env:EMAIL_MODE = 'log'
-
-# 首次启动时创建管理员；请替换为自己的邮箱和密码。
-$env:BOOTSTRAP_ADMIN_EMAIL = 'admin@example.com'
-$env:BOOTSTRAP_ADMIN_PASSWORD = 'REPLACE_WITH_YOUR_ADMIN_PASSWORD'
-
-.\backend\mvnw.cmd -f .\backend\pom.xml spring-boot:run
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-Backend.ps1
 ~~~
 
-没有默认管理员密码。密码要求 12–72 字符，且 UTF-8 编码不超过 72 字节。初始化不会将同邮箱的普通用户静默提升为管理员。
+脚本读取 .env.mysql，检查或启动 Docker Desktop，启动 MySQL 容器并等待健康检查，然后前台启动 Spring Boot。首次运行需要下载镜像和 Maven 依赖。
 
-管理员创建后，后续启动可省略两个 BOOTSTRAP_ADMIN 变量，账户保留在数据库中。上述环境变量只在当前终端及其子进程中生效，新终端需重新设置必要配置。
+本开发入口固定使用 local，禁用支付、邮件、相关定时任务和 SMTP 健康探测；数据库仍由 Flyway 自动迁移，Hibernate 校验结构。无需安装本地 MySQL，也无需手动设置 DB_* 环境变量。所有数据库测试也已改用隔离的 Docker MySQL，不连接开发数据库。
 
-首次启动只初始化演示会员方案（199.00 元、折扣系数 0.9000、期限 365 天），不自动创建房型、实体房或预订。管理员需要通过后台 API 建立房型和实体房，之后才能完成订房流程。会员参数是设计默认值，可通过方案管理调整。
+只检查配置及依赖工具、暂不启动服务：
 
-### 2.4 检查服务与停止服务
+~~~powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-Backend.ps1 -CheckOnly
+~~~
 
-默认端口为 8080。在另一终端执行：
+首次启动没有默认顾客、客房或预订，需要通过后台 API 建立房型和实体房。非支付业务测试脚本会创建自己所需的测试数据。
+
+需要首次创建开发库管理员时，在 .env.mysql 填好两个 BOOTSTRAP_ADMIN_*，运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Start-Backend.ps1 -InitializeAdmin`。普通启动和 Java 测试无需该配置；测试自动创建临时角色账户。
+
+### 2.3 检查和停止服务
+
+在另一终端检查，端口修改后相应调整：
 
 ~~~powershell
 Invoke-RestMethod 'http://localhost:8080/actuator/health'
 ~~~
 
-服务正常时返回 status 为 UP。停止前台服务使用 **Ctrl+C**。如需更换端口，在启动终端设置 $env:SERVER_PORT = '8081'，并相应调整访问地址。
+健康状态应为 UP。按 Ctrl+C 停止前台 Java；MySQL 容器和数据保留。需要停止数据库时，在 Java 退出后执行：
 
-| 入口 | 地址及访问要求 |
-| --- | --- |
-| 健康检查 | http://localhost:8080/actuator/health，公开访问 |
-| 业务 API | http://localhost:8080/api/v1 |
-| Swagger UI | http://localhost:8080/swagger-ui/index.html，需要管理员会话 |
-| OpenAPI JSON | http://localhost:8080/v3/api-docs，需要管理员会话 |
+~~~powershell
+docker compose --env-file .env.mysql -f compose.mysql.yaml stop
+~~~
 
-认证采用 Session Cookie。调用登录、注册及其他写接口前，先 GET /api/v1/auth/csrf，保留 Cookie，并在 X-CSRF-TOKEN 请求头中携带返回的 data.token；登录成功后重新获取 token。浏览器和 PowerShell 的会话不互通，浏览器访问 Swagger 需要在同一浏览器会话中完成管理员登录。
+业务 API 前缀为 /api/v1，Swagger 位于 /swagger-ui/index.html，需要管理员会话。登录和写请求使用 Session Cookie + CSRF；详细操作见 [业务测试指南](scripts/backend-tests/README.md)。
 
-创建预订、购买会员和创建支付尝试还要求 Idempotency-Key 请求头。详细参数可查看 OpenAPI 或各模块的 api 代码。
 
 ## 3. 测试、格式检查与打包命令
 
 以下命令同样在项目根目录执行。测试不要求先启动后端。
 
+日常使用模块选择脚本，业务测试保留在 backend/src/test/java 的各模块目录中：
+
+~~~powershell
+# 交互菜单：支持全选、编号或多个模块标识
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1
+# 暂缓邮件和支付时，运行核心六个模块（需要 Docker）
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Core
+# 只运行账户和预订模块
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Identity,Booking
+# 分别检查核心模块中的顾客、员工或管理员相关用例
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Core -Role Admin
+# 全部顺序执行，包含 Docker MySQL；也可单独 -Modules MySql
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules All
+~~~
+
+脚本逐模块启动独立 Maven/JVM；全选时先执行单模块检查，再执行跨模块和 MySQL 集成。也可用 -Stage Modules 或 -Stage Integrated 只选一个阶段。每个用例的输入、预期和实际观测值会打印到终端并保存到 results/java-时间戳/；[测试入口](docs/testing/README.md) 链接两份阶段用例表，执行后更新实际结果，未选模块保持“未执行”。历史报告保留。共45个普通 Java 用例及6个 MySQL 复用条目，最终结果待你执行，不能套用下方旧版验证记录。
+
+以下 Maven 命令供单独构建使用；它们生成原始结果报告，但不会更新上述统一说明：
+
 | 目的 | PowerShell 命令 | 环境要求 |
 | --- | --- | --- |
-| 运行快速测试 | .\backend\mvnw.cmd -f .\backend\pom.xml test | JDK 21；使用 H2，无需 MySQL、Docker 或外部服务凭据 |
-| 完整构建与检查 | .\backend\mvnw.cmd -f .\backend\pom.xml verify | 包含快速测试、格式检查、打包和 MySQL 集成测试；Docker 不可用时 MySQL 测试会跳过 |
+| 运行模块测试 | .\backend\mvnw.cmd -f .\backend\pom.xml test | JDK21与Docker；数据库用例自动建立MySQL临时容器，不需外部服务凭据 |
+| 完整构建与检查 | .\backend\mvnw.cmd -f .\backend\pom.xml verify | 模块测试、格式检查、打包和独立事务回归；Docker不可用时失败 |
 | 检查 Java 格式 | .\backend\mvnw.cmd -f .\backend\pom.xml spotless:check | 不修改代码 |
 | 自动整理 Java 格式 | .\backend\mvnw.cmd -f .\backend\pom.xml spotless:apply | 会修改 Java 文件格式 |
 
-验证真实 MySQL 行为时，先启动可用的 Docker 引擎，再运行 verify；Testcontainers 会创建 MySQL 8.4 测试容器，首次需要下载镜像。**构建成功但集成测试被跳过，不代表 MySQL 验证完成。**
+执行数据库测试前启动 Docker Desktop Linux 引擎；Testcontainers 创建随机端口、临时凭据的 MySQL 8.4 容器，首次需要下载镜像。不会回退到 H2，不读取 .env.mysql，不复用开发库。
 
-构建和运行可执行 JAR：
+构建可执行 JAR：
 
 ~~~powershell
 .\backend\mvnw.cmd -f .\backend\pom.xml verify
-
-# 构建成功后执行；需在此终端设置第 2.3 节的运行环境变量。
-java -jar .\backend\target\backend-0.0.1-SNAPSHOT.jar
 ~~~
 
-运行 JAR 与 spring-boot:run 是两种启动方式，选择一种即可，避免同时占用同一端口。
+构建产物为 backend/target/backend-0.0.1-SNAPSHOT.jar。日常开发使用第 2 节启动脚本；直接运行 JAR 不会自动加载 .env.mysql，部署运行参数需另行配置。
 
-测试报告保存在 backend/target/surefire-reports 和 backend/target/failsafe-reports；JAR、日志及测试报告均属于构建产物。
+Maven 原生报告保存在 backend/target/surefire-reports 和 backend/target/failsafe-reports；逐类输入/预期/实际报告另存 results/。使用模块脚本时，原始 Maven 报告可能被下一模块覆盖，完整历史请看 results/。
 
 ## 4. 已完成的后端内容
 
@@ -164,18 +181,7 @@ java -jar .\backend\target\backend-0.0.1-SNAPSHOT.jar
 
 模拟邮件状态为 SIMULATED；SMTP 接受后记为 SENT，不代表已经到达收件箱。支付宝沙箱和 SMTP 的代码完成情况与真实联调状态分开记录，见第 5 节。
 
-### 4.2 最近一次已有验证记录
 
-记录时间：**2026-10-22 16:59（Asia/Shanghai）**。本次 README 更新核对了现有测试报告，未重新运行测试。
-
-| 验证项 | 已有结果 |
-| --- | --- |
-| Maven 构建与格式检查 | spotless:apply verify 构建成功；77 个生产及测试 Java 文件通过格式检查 |
-| 快速测试 | 30 项通过，0 失败、0 错误、0 跳过 |
-| MySQL 集成测试 | 10 项跳过，当次没有可用 Docker 引擎 |
-| 可执行产物 | 已生成 backend/target/backend-0.0.1-SNAPSHOT.jar |
-
-已有测试覆盖启动上下文、业务规则、预订和会员流程、并发及回滚、幂等、权限与 CSRF、支付恢复、支付宝本地验签、通知重试等。H2 测试不能替代真实 MySQL 锁行为、外部渠道调用或浏览器端验收。
 
 ## 5. 待完成事项
 
@@ -184,11 +190,11 @@ java -jar .\backend\target\backend-0.0.1-SNAPSHOT.jar
 | 项目 | 需要做什么 |
 | --- | --- |
 | JDK 21 与依赖下载 | 确认 java 和 Wrapper 可用 |
-| MySQL | 创建数据库、配置 DB_URL / DB_USERNAME / DB_PASSWORD，完成真实启动和迁移验证 |
-| 初始管理员 | 首次启动配置 BOOTSTRAP_ADMIN_EMAIL / BOOTSTRAP_ADMIN_PASSWORD |
-| 业务数据 | 通过后台 API 创建房型、价格和实体房，再验证查房到支付确认流程 |
+| MySQL | 在 .env.mysql 配置密码和端口，启动脚本自动建库及映射 JDBC 参数；真实迁移仍需环境验证 |
+| 初始管理员（可选） | 普通启动不需要；需要管理开发库时配置两项并加 -InitializeAdmin |
+| 业务数据 | 当前先验证查房、报价、创建待支付预订和库存；支付确认暂缓 |
 
-依赖已在 [backend/pom.xml](backend/pom.xml) 声明。当前本地运行无需先配置 Docker、Redis、消息队列、真实支付或邮件服务。
+依赖已在 [backend/pom.xml](backend/pom.xml) 声明。当前启动方案需要 Docker Desktop，无需 Redis、消息队列、真实支付或邮件服务。
 
 ### 5.2 已有代码，待配置和真实联调
 
@@ -216,7 +222,7 @@ SMTP 按服务商要求设置 MAIL_SMTP_AUTH、MAIL_STARTTLS、MAIL_SSL_ENABLE�
 
 ### 5.4 可在部署阶段再完成
 
-Dockerfile / Compose、Nginx、HTTPS、生产 Secret 管理、Secure Cookie、数据库迁移与运行账户分离、备份恢复、监控告警和容量测试尚待配置与验证。这些不是当前本地开发的前置条件。
+本地数据库 Compose 已提供。Java 应用 Dockerfile、完整应用 Compose、Nginx、HTTPS、生产 Secret 管理、Secure Cookie、数据库迁移与运行账户分离、备份恢复、监控告警和容量测试尚待配置与验证。
 
 部署时需要显式选择运行 profile、支付和邮件模式；默认 local 使用 mock / log。使用 HTTPS 后配置 SESSION_COOKIE_SECURE=true，并按需要设置 API_DOCS_ENABLED。
 
@@ -224,11 +230,14 @@ Dockerfile / Compose、Nginx、HTTPS、生产 Secret 管理、Secure Cookie、�
 
 | 文件 | 用途 |
 | --- | --- |
+| [Docker MySQL 本地开发流程](docs/运行指南.md) | 无需安装本地 MySQL 的数据库启动方案 |
+| [后端业务测试指南](scripts/backend-tests/README.md) | 非支付、非邮件模块测试命令和验收说明 |
+| [Java 模块测试说明与实际输出](docs/testing/README.md) | 当前推荐测试入口；各用例输入、预期、待执行/实际结果 |
 | [application.properties](backend/src/main/resources/application.properties) | 数据库、会话、支付、邮件和业务参数 |
-| [application-local.properties](backend/src/main/resources/application-local.properties) | 本地 mock 支付、log 通知默认值 |
-| [application-test.properties](backend/src/test/resources/application-test.properties) | H2 测试环境与关闭定时调度的配置 |
+| [application-local.properties](backend/src/main/resources/application-local.properties) | 本地 mock/log 默认值及可开关的 SMTP 健康探测；本轮通过环境变量禁用支付与邮件 |
+| [application-test.properties](backend/src/test/resources/application-test.properties) | 隔离MySQL测试配置；实际连接由MySqlTestInitializer注入 |
 | [数据库迁移目录](backend/src/main/resources/db/migration) | 业务表及 Spring Session 表结构 |
-| [开发技术文档](docs/Holiday-Booking-开发技术文档.md) | 原始需求分析、整体架构与后续功能设计 |
-| [设计资料目录](docs/README.md) | 离线阅读版、需求追踪表和测试计划入口，属于设计阶段资料 |
+| [开发技术文档](docs/design/Holiday-Booking-开发技术文档.md) | 原始需求分析、整体架构与后续功能设计 |
+| [设计资料目录](docs/design/README.md) | 离线阅读版、需求追踪表和测试计划入口，属于设计阶段资料 |
 
 当前业务默认值：酒店时区 Asia/Shanghai，报价有效期 10 分钟，占房最长 15 分钟（不超过入住当天 15:00），最多提前 365 天、连续 30 晚、每单 10 间；D1 提醒在入住前一天 09:00。具体配置与业务校验以源码为准。
