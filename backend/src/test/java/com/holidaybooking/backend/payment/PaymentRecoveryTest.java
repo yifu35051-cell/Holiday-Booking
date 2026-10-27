@@ -1,5 +1,6 @@
-package com.holidaybooking.backend;
+package com.holidaybooking.backend.payment;
 
+import static com.holidaybooking.backend.support.TestEvidence.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -10,10 +11,12 @@ import com.holidaybooking.backend.catalog.application.CatalogService;
 import com.holidaybooking.backend.identity.application.IdentityService;
 import com.holidaybooking.backend.payment.application.PaymentService;
 import com.holidaybooking.backend.payment.domain.PaymentGateway;
+import com.holidaybooking.backend.support.*;
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -25,7 +28,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(TestClockConfig.class)
-class PaymentRecoveryTest {
+@Tag("channels")
+class PaymentRecoveryTest extends MySqlTestSupport {
     @MockitoBean private PaymentGateway gateway;
     @Autowired private IdentityService identity;
     @Autowired private CatalogService catalog;
@@ -97,25 +101,27 @@ class PaymentRecoveryTest {
     }
 
     @Test
+    @CaseSpec(input = "超过15分钟后渠道UNKNOWN；随后确认CLOSED", expected = "未知时保留占房，确认关闭后释放并EXPIRED")
     void unknownExpiredPaymentKeepsInventoryUntilTheProviderConfirmsClosure() {
         var unknown = result(attempt.outTradeNo(), PaymentGateway.State.UNKNOWN, null, null);
         when(gateway.query(any())).thenReturn(unknown);
         when(gateway.close(any())).thenReturn(unknown);
         clock.advance(Duration.ofMinutes(16));
         payments.reconcile(Long.parseLong(booking.paymentOrderId()));
-        assertThat(heldNights()).isEqualTo(2);
-        assertThat(payments.get(userId, Long.parseLong(booking.paymentOrderId())).status())
+        assertThat(actual(heldNights())).isEqualTo(2);
+        assertThat(actual(payments.get(userId, Long.parseLong(booking.paymentOrderId())).status()))
                 .isEqualTo("PENDING");
 
         when(gateway.close(any()))
                 .thenReturn(result(attempt.outTradeNo(), PaymentGateway.State.CLOSED, null, null));
         payments.reconcile(Long.parseLong(booking.paymentOrderId()));
-        assertThat(heldNights()).isZero();
-        assertThat(bookings.get(userId, Long.parseLong(booking.id()), false).status())
+        assertThat(actual(heldNights())).isZero();
+        assertThat(actual(bookings.get(userId, Long.parseLong(booking.id()), false).status()))
                 .isEqualTo("EXPIRED");
     }
 
     @Test
+    @CaseSpec(input = "真实支付时间在截止前，回调在16分钟后到达并重复通知", expected = "预订CONFIRMED；通知仅2条，不重复生成")
     void delayedVerifiedPaymentUsesTheActualPaidTimeAndIsIdempotent() {
         Instant paidAt = clock.instant().plusSeconds(30);
         clock.advance(Duration.ofMinutes(16));
@@ -128,17 +134,22 @@ class PaymentRecoveryTest {
         when(gateway.verifyCallback(any())).thenReturn(paid);
         payments.callback(Map.of("signed", "fixture"));
         payments.callback(Map.of("signed", "fixture"));
-        assertThat(bookings.get(userId, Long.parseLong(booking.id()), false).status())
+        assertThat(actual(bookings.get(userId, Long.parseLong(booking.id()), false).status()))
                 .isEqualTo("CONFIRMED");
         assertThat(
-                        jdbc.sql("select count(*) from notification_task where booking_id=?")
-                                .param(Long.parseLong(booking.id()))
-                                .query(Long.class)
-                                .single())
+                        actual(
+                                jdbc.sql(
+                                                "select count(*) from notification_task where booking_id=?")
+                                        .param(Long.parseLong(booking.id()))
+                                        .query(Long.class)
+                                        .single()))
                 .isEqualTo(2);
     }
 
     @Test
+    @CaseSpec(
+            input = "应付200元的单收到签名渠道0.01元入账",
+            expected = "预订PENDING_PAYMENT；记录AMOUNT_MISMATCH和实际金额0.01")
     void mismatchedIncomingFundsAreRecordedWithoutConfirmingBooking() {
         when(gateway.verifyCallback(any()))
                 .thenReturn(
@@ -148,23 +159,27 @@ class PaymentRecoveryTest {
                                 new BigDecimal("0.01"),
                                 clock.instant()));
         payments.callback(Map.of("signed", "fixture"));
-        assertThat(bookings.get(userId, Long.parseLong(booking.id()), false).status())
+        assertThat(actual(bookings.get(userId, Long.parseLong(booking.id()), false).status()))
                 .isEqualTo("PENDING_PAYMENT");
         assertThat(
-                        jdbc.sql("select reason from payment_exception where attempt_id=?")
-                                .param(Long.parseLong(attempt.id()))
-                                .query(String.class)
-                                .single())
+                        actual(
+                                jdbc.sql("select reason from payment_exception where attempt_id=?")
+                                        .param(Long.parseLong(attempt.id()))
+                                        .query(String.class)
+                                        .single()))
                 .isEqualTo("AMOUNT_MISMATCH");
         assertThat(
-                        jdbc.sql("select received_amount from payment_exception where attempt_id=?")
-                                .param(Long.parseLong(attempt.id()))
-                                .query(BigDecimal.class)
-                                .single())
+                        actual(
+                                jdbc.sql(
+                                                "select received_amount from payment_exception where attempt_id=?")
+                                        .param(Long.parseLong(attempt.id()))
+                                        .query(BigDecimal.class)
+                                        .single()))
                 .isEqualByComparingTo("0.01");
     }
 
     @Test
+    @CaseSpec(input = "先关闭过期单并释放库存，再收到迟到付款", expected = "预订仍EXPIRED，库存0，异常LATE_PAYMENT")
     void latePaymentCannotReopenAnExpiredBooking() {
         clock.advance(Duration.ofMinutes(16));
         when(gateway.query(any()))
@@ -178,14 +193,53 @@ class PaymentRecoveryTest {
                                 new BigDecimal(booking.totalAmount()),
                                 clock.instant()));
         payments.callback(Map.of("signed", "fixture"));
-        assertThat(bookings.get(userId, Long.parseLong(booking.id()), false).status())
+        assertThat(actual(bookings.get(userId, Long.parseLong(booking.id()), false).status()))
                 .isEqualTo("EXPIRED");
-        assertThat(heldNights()).isZero();
+        assertThat(actual(heldNights())).isZero();
         assertThat(
-                        jdbc.sql("select reason from payment_exception where attempt_id=?")
-                                .param(Long.parseLong(attempt.id()))
-                                .query(String.class)
-                                .single())
+                        actual(
+                                jdbc.sql("select reason from payment_exception where attempt_id=?")
+                                        .param(Long.parseLong(attempt.id()))
+                                        .query(String.class)
+                                        .single()))
                 .isEqualTo("LATE_PAYMENT");
+    }
+
+    @Test
+    @CaseSpec(
+            input = "模拟收到0.01而应付200.00的回调，管理员查询异常并写入复核说明",
+            expected = "异常记录可查询并记为REVIEWED；预订仍PENDING_PAYMENT；不发生退款或强制确认")
+    void reviewRecordsAdministrativeDecisionWithoutConfirmingBooking() {
+        when(gateway.verifyCallback(any()))
+                .thenReturn(
+                        result(
+                                attempt.outTradeNo(),
+                                PaymentGateway.State.PAID,
+                                new BigDecimal("0.01"),
+                                clock.instant()));
+        payments.callback(Map.of("signed", "fixture"));
+        long exception =
+                jdbc.sql("select id from payment_exception where attempt_id=?")
+                        .param(Long.parseLong(attempt.id()))
+                        .query(Long.class)
+                        .single();
+        assertThat(
+                        actual(
+                                payments.exceptions(0, 100).stream()
+                                        .anyMatch(
+                                                row ->
+                                                        Long.parseLong(row.get("id").toString())
+                                                                == exception)))
+                .isTrue();
+        payments.reviewException(userId, exception, "Manual investigation; no refund requested");
+        assertThat(
+                        actual(
+                                jdbc.sql("select status from payment_exception where id=?")
+                                        .param(exception)
+                                        .query(String.class)
+                                        .single()))
+                .isEqualTo("REVIEWED");
+        assertThat(actual(bookings.get(userId, Long.parseLong(booking.id()), false).status()))
+                .isEqualTo("PENDING_PAYMENT");
     }
 }

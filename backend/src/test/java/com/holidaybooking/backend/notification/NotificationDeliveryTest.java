@@ -1,5 +1,6 @@
-package com.holidaybooking.backend;
+package com.holidaybooking.backend.notification;
 
+import static com.holidaybooking.backend.support.TestEvidence.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -13,10 +14,12 @@ import com.holidaybooking.backend.notification.domain.EmailSender;
 import com.holidaybooking.backend.payment.application.PaymentService;
 import com.holidaybooking.backend.shared.domain.DomainException;
 import com.holidaybooking.backend.shared.infrastructure.JdbcTime;
+import com.holidaybooking.backend.support.*;
 import java.math.BigDecimal;
 import java.time.*;
 import java.util.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -25,12 +28,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /** 验证通知队列在重试、未知投递和工作进程中断后的恢复规则。 */
-@SpringBootTest(
-        properties =
-                "spring.datasource.url=jdbc:h2:mem:notifications;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1")
+@SpringBootTest
 @ActiveProfiles("test")
 @Import(TestClockConfig.class)
-class NotificationDeliveryTest {
+@Tag("channels")
+class NotificationDeliveryTest extends MySqlTestSupport {
     @MockitoBean private EmailSender sender;
     @Autowired private IdentityService identity;
     @Autowired private CatalogService catalog;
@@ -99,13 +101,14 @@ class NotificationDeliveryTest {
     }
 
     @Test
+    @CaseSpec(input = "发送器连续RETRY；推进1、5、30分钟", expected = "立即重复调度不重发；总4次后FAILED")
     void retriesUseBoundedBackoffAndStopAfterFourAttempts() {
         when(sender.send(any()))
                 .thenReturn(
                         new EmailSender.Result(
                                 EmailSender.Outcome.RETRY, "Temporary authentication failure"));
         notifications.dispatch();
-        assertThat(state()).isEqualTo("RETRY");
+        assertThat(actual(state())).isEqualTo("RETRY");
         notifications.dispatch();
         verify(sender, times(1)).send(any());
 
@@ -113,32 +116,36 @@ class NotificationDeliveryTest {
             clock.advance(Duration.ofMinutes(minutes));
             notifications.dispatch();
         }
-        assertThat(state()).isEqualTo("FAILED");
+        assertThat(actual(state())).isEqualTo("FAILED");
         verify(sender, times(4)).send(any());
     }
 
     @Test
+    @CaseSpec(
+            input = "发送结果UNKNOWN，推进1小时，人工分别不确认/确认重试",
+            expected = "UNKNOWN不自动重发；未确认重试拒绝；确认重试后可SENT")
     void uncertainDeliveryRequiresExplicitAcknowledgementBeforeRetry() {
         when(sender.send(any()))
                 .thenReturn(
                         new EmailSender.Result(
                                 EmailSender.Outcome.UNKNOWN, "SMTP outcome unknown"));
         notifications.dispatch();
-        assertThat(state()).isEqualTo("UNKNOWN");
+        assertThat(actual(state())).isEqualTo("UNKNOWN");
         clock.advance(Duration.ofHours(1));
         notifications.dispatch();
         verify(sender, times(1)).send(any());
-        assertThatThrownBy(() -> notifications.retry(userId, taskId, false))
+        assertThatThrownBy(expectFailure(() -> notifications.retry(userId, taskId, false)))
                 .isInstanceOf(DomainException.class);
 
         notifications.retry(userId, taskId, true);
         when(sender.send(any()))
                 .thenReturn(new EmailSender.Result(EmailSender.Outcome.SENT, "SMTP accepted"));
         notifications.dispatch();
-        assertThat(state()).isEqualTo("SENT");
+        assertThat(actual(state())).isEqualTo("SENT");
     }
 
     @Test
+    @CaseSpec(input = "任务SENDING且租约已过期", expected = "转UNKNOWN，不调用发送器")
     void expiredWorkerLeaseIsNotAutomaticallyResent() {
         jdbc.sql(
                         "update notification_task set"
@@ -146,23 +153,84 @@ class NotificationDeliveryTest {
                 .params(JdbcTime.write(clock.instant().minusSeconds(1)), taskId)
                 .update();
         notifications.dispatch();
-        assertThat(state()).isEqualTo("UNKNOWN");
+        assertThat(actual(state())).isEqualTo("UNKNOWN");
         verifyNoInteractions(sender);
     }
 
     @Test
+    @CaseSpec(input = "确认邮件已发送，时钟推进20天到入住之后", expected = "D1为SKIPPED，不调用发送器")
     void reminderIsSkippedAfterArrivalInsteadOfSendingStaleMail() {
         jdbc.sql("update notification_task set state='SENT' where id=?").param(taskId).update();
         clock.advance(Duration.ofDays(20));
         notifications.dispatch();
         assertThat(
-                        jdbc.sql(
-                                        "select state from notification_task where booking_id=? and"
-                                                + " task_type='REMINDER_D1'")
-                                .param(bookingId)
-                                .query(String.class)
-                                .single())
+                        actual(
+                                jdbc.sql(
+                                                "select state from notification_task where booking_id=? and"
+                                                        + " task_type='REMINDER_D1'")
+                                        .param(bookingId)
+                                        .query(String.class)
+                                        .single()))
                 .isEqualTo("SKIPPED");
         verifyNoInteractions(sender);
+    }
+
+    @Test
+    @CaseSpec(
+            input = "当天发送配额已使用50次，再调度一个待发送确认任务",
+            expected = "任务保持READY且attempts=0；不调用发送器；后台列表可查该任务")
+    void dailyQuotaDefersDeliveryWithoutConsumingAnAttempt() {
+        jdbc.sql("update notification_quota set budget_date=?,used_count=50 where id=1")
+                .param(clock.instant().atZone(ZoneId.of("Asia/Shanghai")).toLocalDate())
+                .update();
+        notifications.dispatch();
+        assertThat(actual(state())).isEqualTo("READY");
+        assertThat(
+                        actual(
+                                notifications.list(0, 100).stream()
+                                        .filter(t -> t.id().equals(Long.toString(taskId)))
+                                        .findFirst()
+                                        .orElseThrow()
+                                        .attempts()))
+                .isZero();
+        verifyNoInteractions(sender);
+    }
+
+    @Autowired private org.springframework.transaction.support.TransactionTemplate transactions;
+
+    @Test
+    @CaseSpec(
+            input = "酒店入住当天08:00，为已存在的预订版本重新生成通知任务（先清理本用例任务）",
+            expected = "确认任务READY，D1提醒SKIPPED，不补发前一天提醒")
+    void sameDayArrivalSkipsPriorDayReminder() {
+        clock.advance(Duration.ofDays(19));
+        // 只清理当前用例的任务，保留真实存在的 revision 1，满足数据库外键约束。
+        jdbc.sql("delete from notification_task where booking_id=?").param(bookingId).update();
+        transactions.executeWithoutResult(
+                status ->
+                        notifications.schedule(
+                                bookingId,
+                                1,
+                                "guest@example.com",
+                                "Guest",
+                                LocalDate.of(2026, 11, 10),
+                                LocalDate.of(2026, 11, 12),
+                                new BigDecimal("200")));
+        assertThat(
+                        actual(
+                                jdbc.sql(
+                                                "select state from notification_task where booking_id=? and revision_number=1 and task_type='REMINDER_D1'")
+                                        .param(bookingId)
+                                        .query(String.class)
+                                        .single()))
+                .isEqualTo("SKIPPED");
+        assertThat(
+                        actual(
+                                jdbc.sql(
+                                                "select state from notification_task where booking_id=? and revision_number=1 and task_type='CONFIRMATION'")
+                                        .param(bookingId)
+                                        .query(String.class)
+                                        .single()))
+                .isEqualTo("READY");
     }
 }

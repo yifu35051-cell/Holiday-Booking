@@ -1,4 +1,4 @@
-package com.holidaybooking.backend;
+package com.holidaybooking.backend.support;
 
 import java.time.*;
 import java.util.concurrent.atomic.AtomicReference;
