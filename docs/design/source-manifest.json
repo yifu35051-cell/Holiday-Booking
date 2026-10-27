@@ -1,0 +1,17 @@
+{
+  "document_date": "2026-10-21",
+  "sources": [
+    {
+      "file": "SE Group ProjectSG_revised.pdf",
+      "bytes": 383551,
+      "sha256": "f51f4a6e4c9efd0ae1f85e0d4c772cdf2c5cb0d010cd205431ef52adf3ee9d41"
+    },
+    {
+      "file": "Suggested conisderation for services accessible in China for payment email DB - subject to your design decisions.pdf",
+      "bytes": 191461,
+      "sha256": "98748ae49b0353c7cce3cc49717de6f1f5f3a0e69d2a840d8dd8c166e3b4d13b"
+    }
+  ],
+  "document_sha256": "472f845b98cc07cf4c4b8768ad09b667d984292781cb5e2afe215af0d37f5fe7",
+  "note": "Checksums identify the read source files; no application tests were run."
+}

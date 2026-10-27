@@ -1,0 +1,50 @@
+﻿[
+    {
+        "module":  "Shared",
+        "mavenExitCode":  0,
+        "status":  "PASSED：3 项",
+        "log":  "D:\\PycharmProjects\\Holiday-Booking\\results\\java-20261027-164758-848-4afc50\\Shared\\console.log"
+    },
+    {
+        "module":  "Identity",
+        "mavenExitCode":  0,
+        "status":  "PASSED：6 项",
+        "log":  "D:\\PycharmProjects\\Holiday-Booking\\results\\java-20261027-164758-848-4afc50\\Identity\\console.log"
+    },
+    {
+        "module":  "Catalog",
+        "mavenExitCode":  0,
+        "status":  "PASSED：3 项",
+        "log":  "D:\\PycharmProjects\\Holiday-Booking\\results\\java-20261027-164758-848-4afc50\\Catalog\\console.log"
+    },
+    {
+        "module":  "Booking",
+        "mavenExitCode":  0,
+        "status":  "PASSED：6 项",
+        "log":  "D:\\PycharmProjects\\Holiday-Booking\\results\\java-20261027-164758-848-4afc50\\Booking\\console.log"
+    },
+    {
+        "module":  "Membership",
+        "mavenExitCode":  0,
+        "status":  "PASSED：2 项",
+        "log":  "D:\\PycharmProjects\\Holiday-Booking\\results\\java-20261027-164758-848-4afc50\\Membership\\console.log"
+    },
+    {
+        "module":  "Management",
+        "mavenExitCode":  0,
+        "status":  "PASSED：2 项",
+        "log":  "D:\\PycharmProjects\\Holiday-Booking\\results\\java-20261027-164758-848-4afc50\\Management\\console.log"
+    },
+    {
+        "module":  "Payment",
+        "mavenExitCode":  0,
+        "status":  "PASSED：12 项",
+        "log":  "D:\\PycharmProjects\\Holiday-Booking\\results\\java-20261027-164758-848-4afc50\\Payment\\console.log"
+    },
+    {
+        "module":  "Notification",
+        "mavenExitCode":  0,
+        "status":  "PASSED：8 项",
+        "log":  "D:\\PycharmProjects\\Holiday-Booking\\results\\java-20261027-164758-848-4afc50\\Notification\\console.log"
+    }
+]

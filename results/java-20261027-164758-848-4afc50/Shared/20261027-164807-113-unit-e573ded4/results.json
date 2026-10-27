@@ -1,0 +1,28 @@
+{
+  "cases" : [ {
+    "testClass" : "com.holidaybooking.backend.shared.BackendApplicationTests",
+    "method" : "contextLoads",
+    "input" : "启动test profile，执行Flyway并装配Spring容器",
+    "expected" : "数据源和预订服务Bean存在，应用上下文成功启动",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: true", "实际断言值: true" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.shared.DomainRulesTest",
+    "method" : "checkoutIsExclusiveAndSameDayCutoffUsesResortZone",
+    "input" : "10月22日到24日；当地14:59:59和15:00尝试当日入住；零晚区间",
+    "expected" : "占22/23两晚不含24；截止前接受，15:00和零晚区间拒绝",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: [2026-10-22, 2026-10-23]", "实际异常: DomainException: 入住日期超出可预订范围", "业务错误码: STAY_OUT_OF_RANGE", "实际异常: DomainException: 离店日期必须晚于入住日期", "业务错误码: INVALID_STAY" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.shared.DomainRulesTest",
+    "method" : "roundsEachNightBeforeSumming",
+    "input" : "100.05乘0.9；非法金额1.001和-1",
+    "expected" : "逐晚结果90.05；超精度及负数金额拒绝",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: 90.05", "实际异常: IllegalArgumentException: 金额最多包含两位小数", "实际异常: IllegalArgumentException: 金额超出有效范围" ],
+    "reason" : ""
+  } ],
+  "startedAt" : "2026-10-27T08:48:07.104038100Z"
+}

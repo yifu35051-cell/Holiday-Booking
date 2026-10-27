@@ -1,0 +1,219 @@
+
+--- PAGE 1 ---
+Verified against official docs. One finding dominates: payment is the bottleneck,
+because WeChat Pay and Alipay both gate production behind business licences — so
+the only realistic free option is a sandbox.
+
+1. Payment — sandbox only (Alipay is your only real choice)
+
+                                    Accessi
+ServiFree offering                  ble to     URL
+ce                                  individu
+                                    als?
+
+支付    Full isolated sandbox:        Yes —
+宝开    dedicated APPID, buyer + 个人开
+放平    seller test accounts with     发者即        <https://opendocs.alipay.com/isv/03l8cj>
+台沙    virtual balances, RSA2        可，无
+箱     signing, callback support     需企业
+                                    资质
+
+                                    No —
+                                    requires
+      Sandbox merchant ID           an
+微信    (sandbox_ prefix),            existing
+支付    separate APIv3 key,           商户号,       <https://pay.weixin.qq.com>
+沙箱 api.mch.weixin.qq.com/sa         which
+      ndboxnew                      requires
+                                    business
+                                    registrati
+                                    on
+
+腾讯    Simulates                     Requires
+云商    payment/refund success        商户入        <https://p.wecard.tencent.com/docs/devtools/
+付沙    via mock endpoints            驻          sandbox_develop>
+箱                                   approval
+
+Alipay sandbox specifics for §4.3.1 of your report:
+
+    •   Sandbox gateway: https://openapi-sandbox.dl.alipaydev.com/gateway.do
+        (production is openapi.alipay.com/gateway.do — mixing these is the #1 cause
+        of invalid-signature)
+
+    •   Message gateway: openchannel-sandbox.dl.alipaydev.com
+
+    •   Signing: RSA2 mandatory
+
+--- PAGE 2 ---
+    •   Constraint worth documenting: balance payment only — no Huabei, no bank
+        cards. Some flows need the sandbox-version Alipay Android app, downloadable
+        from the console.
+
+WeChat Pay's blocker matters for your report. Multiple sources confirm the sandbox
+itself has no real-name requirement, but it validates against the production merchant
+account's real-name status — return MCH_NOT_REALNAME if unverified. As an
+individual developer in Chengdu you cannot get a           商户号. So either use Alipay alone,
+or document WeChat Pay as a designed-but-unimplemented adapter — which is a
+legitimate architectural exercise and demonstrates your port/abstraction layer working.
+
+2. Email — domestic providers, real free quotas
+
+Service     Free     Beyond      URL
+            quota    quota
+
+            2,000
+            emails
+阿里云邮        total
+件推送         per      ¥2/千封
+DirectMa    main     pay-as-     <https://help.aliyun.com/zh/direct-mail/level>
+il          accoun   you-go
+            t, max
+            200/da
+            y free
+
+            1,000    ¥0.0019–
+            emails   0.032/封
+腾讯云         per      dependin    <https://intl.cloud.tencent.com/document/product/1084/3
+SES         accoun   g on        9335>
+            t, no    source
+            expiry
+
+            ~10–
+            50/day
+SendClou    (source  ¥59/月起
+d           s        步           <https://www.sendcloud.net/prices>
+            conflict
+            —
+            verify)
+
+--- PAGE 3 ---
+Service    Free      Beyond     URL
+           quota     quota
+
+           50        Resource
+SUBMAIL emails       packs
+赛邮         + 50      from       <https://www.mysubmail.com/documents/mK7d94>
+           SMS       ¥760/10
+           trial     万封
+
+Recommendation:        阿里云       DirectMail — largest quota and lowest overage. Two
+design notes for §4.3.2:
+
+    •   The 2,000 is a lifetime total, not a monthly refill. A runaway retry loop will
+        burn it. Your §10.4 cost-control section should include a hard cap and alert.
+
+    •   Requires    实名认证        to activate, and daily sending limits adjust dynamically by
+        reputation score (无效地址率             <5%,  垃圾邮件率          <2.5%,  成功率       >92%). Bad
+        address hygiene shrinks your quota.
+
+Note both Aliyun and Tencent quote different overage prices across Chinese and
+international pages — record the date you checked in §4.1.
+
+3. Database — domestic-accessible, permanent free tiers
+
+Service Free tier   Notes                    URL
+
+         0.5 GB,
+         30
+         connecti
+         ons, 36k   MySQL 8.0, servers in
+SQLPu    requests/
+b        hr, 5 GB   mainland China,          <https://www.sqlpub.com/pricing>
+         traffic/m  email-only signup
+
+         onth —
+         permane
+         nt free
+
+         5 GiB row MySQL-compatible;
+TiDB     + 5 GiB    AWS
+Cloud    columnar Singapore/Tokyo or         <https://tidbcloud.com>
+Starter + 50M       Alibaba Cloud
+         RUs per    Singapore
+         cluster,
+
+--- PAGE 4 ---
+Service Free tier   Notes                    URL
+
+         up to 5
+         clusters
+
+                    Supabase-
+阿里云 免费版             compatible
+RDS      1C2G, 1    (DB+Auth+Storage+        <https://help.aliyun.com/zh/aidbs/supabase-
+Supab    GB         Realtime), region    华   overview-and-use>
+ase      storage    东  1（杭州）, data
+                    stays domestic
+
+         免费版
+         0.5 GB
+         DB, 2 GB
+MemFi    object     Supabase-based,
+re       storage,   domestic ecosystem,      <https://docs.memfiredb.com/docs/app/annou
+Cloud    1 GB       WeChat mini-             ncement/bulletins/>
+         traffic/m  program friendly
+         onth,
+         max 2
+         apps
+
+         1 GB
+         storage,
+LeanCl   30k API
+oud   开  calls/day, No auto-backup           <https://leancloud.cn>
+发版       3
+         concurre
+         nt
+         threads
+
+腾讯云      1–3
+/阿里      month      Not permanent —          <https://cloud.tencent.com/act/free>
+云        trial only expires
+RDS
+
+Recommendation: TiDB Cloud Starter if you want headroom (5 GiB × 5 clusters
+beats everything else here, and Alibaba Cloud Singapore gives decent latency from
+Chengdu). SQLPub if you want guaranteed mainland access                 — domestic servers,
+MySQL 8.0, permanent free, simplest possible signup.
+
+--- PAGE 5 ---
+Note one caveat on TiDB: the free tier meters Request Units, and public-endpoint data
+transfer costs 1 RU per KiB. Chatty queries will burn the 50M RU allowance faster than
+you'd expect — worth a line in §10.4.
+
+
+
+Recommended stack
+
+Need       Choice                                             Why
+
+Payment 支付宝开放平台沙箱                                             Only sandbox reachable without a
+                                                              business licence
+
+Email      阿里云       DirectMail                               Largest quota, lowest overage,国内
+                                                              直连
+
+Database TiDB Cloud Starter (headroom) or                     Both permanently free
+           SQLPub (mainland speed)
+
+Three caveats specific to your position
+
+1. ICP 备案     applies to production, not to your project. The moment you serve a
+public site from a mainland cloud, the domain needs ICP             备案     and the database must
+be with the same provider as the filer. Irrelevant for coursework — but if §2.6 lists a
+deployment target, mention it.
+
+2. Production payments are out of reach as an individual. Alipay and WeChat Pay
+both require    营业执照        for live accounts. Your SRS/OOD should state this explicitly: the
+payment integration is designed and sandbox-verified, not production-ready. That's an
+honest scope boundary, and stating it earns more credit than omitting it.
+
+3. Free-tier numbers here are less stable than Western equivalents. SendCloud's
+free quota differs across its own pricing page, FAQ, and docs; 腾讯云                  SES overage is
+quoted at ¥0.0019/封        and ¥0.032/封      by different sources. Verify on the day you
+integrate and record the date in §4.1 of your OOD report.
+
+Want me to fill §4.1 (dependency inventory) and §4.3 (per-service design) of your Word
+template with this stack — Alipay sandbox + Aliyun DirectMail + TiDB Cloud Starter —
+written as actual design decisions with the gateway URLs, signing constraints and failure
+modes filled in?
+

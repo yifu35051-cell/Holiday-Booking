@@ -1,0 +1,52 @@
+{
+  "cases" : [ {
+    "testClass" : "com.holidaybooking.backend.identity.ApiSecurityTest",
+    "method" : "staffCanReadBookingsButCannotChangePrices",
+    "input" : "数据库角色STAFF查询后台预订并尝试创建房型",
+    "expected" : "查询200，创建房型403",
+    "status" : "PASSED",
+    "actual" : [ "GET /api/v1/admin/bookings: HTTP 200 {\"data\":{\"items\":[],\"page\":0,\"size\":20,\"total\":0},\"traceId\":\"d726ab63-7937-4e08-87cb-35ad1f724cc7\"}", "POST /api/v1/admin/room-types: HTTP 403 {\"code\":\"FORBIDDEN\",\"message\":\"无权执行此操作\",\"fieldErrors\":[],\"traceId\":\"1055685a-d799-4090-9050-83bfe98af29c\"}" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.identity.ApiSecurityTest",
+    "method" : "anonymousAndCustomerRequestsCannotReachManagement",
+    "input" : "匿名访问后台；数据库CUSTOMER携带旧ADMIN认证；注册缺CSRF",
+    "expected" : "依次401、403、403",
+    "status" : "PASSED",
+    "actual" : [ "GET /api/v1/admin/bookings: HTTP 401 {\"code\":\"UNAUTHENTICATED\",\"message\":\"请先登录\",\"traceId\":\"b3b80863-6d2b-41e8-b748-01172c944997\"}", "GET /api/v1/admin/bookings: HTTP 403 {\"code\":\"FORBIDDEN\",\"message\":\"无权限或 CSRF 校验失败\",\"traceId\":\"7bae78d1-8c43-4320-8405-4f09956d1b5b\"}", "POST /api/v1/auth/register: HTTP 403 {\"code\":\"FORBIDDEN\",\"message\":\"无权限或 CSRF 校验失败\",\"traceId\":\"445a9ca3-1280-4982-b70b-dd68d7c4d547\"}" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.identity.ApiSecurityTest",
+    "method" : "loginRotatesSessionAndCsrfThenLogoutInvalidatesAuthentication",
+    "input" : "获取匿名CSRF→密码登录→用旧token退出→刷新token退出→查询本人",
+    "expected" : "登录200且会话变化；本人CUSTOMER；旧token403；正确退出204；退出后401",
+    "status" : "PASSED",
+    "actual" : [ "GET /api/v1/auth/csrf: HTTP 200 {\"data\":{\"headerName\":\"X-CSRF-TOKEN\",\"token\":\"<hidden>\"},\"traceId\":\"5f920435-17ca-4ea9-8d81-99c1dd43174b\"}", "实际断言值: Cookie 已返回（值隐藏）", "POST /api/v1/auth/login: HTTP 200 {\"data\":{\"id\":\"3\",\"email\":\"58ec227d-7cee-4e9a-959b-191d659c7682@example.com\",\"displayName\":\"Session Guest\",\"role\":\"CUSTOMER\"},\"traceId\":\"6d0e835f-ed67-4ce6-a35e-d1d22de6b988\"}", "实际断言值: Cookie 已返回（值隐藏）", "实际断言值: true", "GET /api/v1/auth/me: HTTP 200 {\"data\":{\"id\":\"3\",\"email\":\"58ec227d-7cee-4e9a-959b-191d659c7682@example.com\",\"displayName\":\"Session Guest\",\"role\":\"CUSTOMER\"},\"traceId\":\"2f8a4b6a-7f8a-4f6f-bef0-5dd601e0459b\"}", "POST /api/v1/auth/logout: HTTP 403 {\"code\":\"FORBIDDEN\",\"message\":\"无权限或 CSRF 校验失败\",\"traceId\":\"c556324a-9e76-461e-86cb-f12066fe3719\"}", "GET /api/v1/auth/csrf: HTTP 200 {\"data\":{\"headerName\":\"X-CSRF-TOKEN\",\"token\":\"<hidden>\"},\"traceId\":\"1eb77de8-3095-439b-bcaa-5431b8ef08d3\"}", "POST /api/v1/auth/logout: HTTP 204 ", "GET /api/v1/auth/me: HTTP 401 {\"code\":\"UNAUTHENTICATED\",\"message\":\"请先登录\",\"traceId\":\"fddd555b-b570-48c6-9a32-b082eb6ac830\"}" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.identity.ApiSecurityTest",
+    "method" : "invalidCredentialsAndMalformedInputHaveStableErrors",
+    "input" : "错误密码登录；checkIn为not-a-date",
+    "expected" : "登录401/AUTHENTICATION_FAILED；日期格式400且包含trace头",
+    "status" : "PASSED",
+    "actual" : [ "POST /api/v1/auth/login: HTTP 401 {\"code\":\"AUTHENTICATION_FAILED\",\"message\":\"邮箱或密码错误，或账号不可用\",\"fieldErrors\":[],\"traceId\":\"701f13c7-d08f-4926-a633-e74961ae5124\"}", "GET /api/v1/availability: HTTP 400 {\"code\":\"INVALID_REQUEST\",\"message\":\"请求格式或必填参数错误\",\"fieldErrors\":[],\"traceId\":\"e80a01a5-6368-49e6-8f76-ccf9bfc7fd80\"}" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.identity.IdentityServiceTest",
+    "method" : "registrationNormalizesEmailHashesPasswordAndRejectsInvalidAccounts",
+    "input" : "大小写混合邮箱、合法测试密码、重复注册和短密码",
+    "expected" : "邮箱归一化、角色 CUSTOMER、密码为 BCrypt 且可匹配；重复邮箱和短密码被拒绝",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: guest-d509a511-4266-4e11-bfa5-5f8a92cb7f4f@example.com", "实际断言值: CUSTOMER", "实际断言值: true", "实际断言值: true", "实际异常: DomainException: 该邮箱已注册", "业务错误码: EMAIL_EXISTS", "实际异常: DomainException: 密码需为 12–72 字符且 UTF-8 编码不超过 72 字节", "业务错误码: PASSWORD_LENGTH" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.identity.IdentityServiceTest",
+    "method" : "administratorBootstrapIsExplicitAndDoesNotPromoteExistingCustomers",
+    "input" : "新的 bootstrap 邮箱和合法密码，连续初始化两次，再将邮箱设为现有普通用户",
+    "expected" : "仅创建一个 ADMIN；重复执行不重设密码；拒绝将已有普通账户提升为管理员",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: ADMIN", "实际断言值: true", "实际断言值: 1", "实际异常: IllegalStateException: Bootstrap email already belongs to a non-admin account", "实际断言值: CUSTOMER" ],
+    "reason" : ""
+  } ],
+  "startedAt" : "2026-10-27T08:48:37.322540400Z"
+}

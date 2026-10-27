@@ -1,0 +1,339 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.holidaybooking:backend >---------------------
+[INFO] Building backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ backend ---
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ backend ---
+[INFO] Copying 2 resources from src\test\resources to target\test-classes
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ backend ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ backend ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[WARNING] System property [test.results.directory] overwritten by user properties from Maven session
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.holidaybooking.backend.payment.AlipaySignatureTest
+
+[CASE PASSED] com.holidaybooking.backend.payment.AlipaySignatureTest#validCallbackVerifiesAndParsesChinaTime
+输入: 本地RSA2签名、金额100、商户正确、北京时间2026-10-22 08:00
+预期: 结果PAID、金额100.00、时间2026-10-22T00:00:00Z
+实际: 实际断言值: PAID
+实际断言值: 100.00
+实际断言值: 2026-10-22T00:00:00Z
+
+
+[CASE PASSED] com.holidaybooking.backend.payment.AlipaySignatureTest#evenSignedCallbackMustBelongToConfiguredMerchant
+输入: 错误seller_id但签名有效
+预期: 拒绝不属于本商户的回调
+实际: 实际异常: DomainException: 支付回调验证失败
+业务错误码: INVALID_SIGNATURE
+
+
+[CASE PASSED] com.holidaybooking.backend.payment.AlipaySignatureTest#missingFieldsAndMalformedDatesAreControlledErrors
+输入: 空回调；有效签名但付款时间not-a-date
+预期: 两者均为可控DomainException，不确认支付
+实际: 实际异常: DomainException: 支付回调缺少必填参数
+业务错误码: INVALID_CALLBACK
+实际异常: DomainException: 支付回调参数或签名无效
+业务错误码: INVALID_CALLBACK
+
+
+[CASE PASSED] com.holidaybooking.backend.payment.AlipaySignatureTest#alteredAmountFailsSignatureVerification
+输入: 签名后将100改为0.01但不重新签名
+预期: 验签拒绝
+实际: 实际异常: DomainException: 支付回调验证失败
+业务错误码: INVALID_SIGNATURE
+
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.549 s -- in com.holidaybooking.backend.payment.AlipaySignatureTest
+[INFO] Running com.holidaybooking.backend.payment.PaymentFlowTest
+16:51:48.857 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.holidaybooking.backend.support.MySqlTestSupport]: MySqlTestSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:51:48.995 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.holidaybooking.backend.BackendApplication for test class com.holidaybooking.backend.payment.PaymentFlowTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-27T16:51:49.799+08:00  INFO 25176 --- [holiday-booking] [           main] org.testcontainers.images.PullPolicy     : Image pull policy will be performed by: DefaultPullPolicy()
+2026-10-27T16:51:49.804+08:00  INFO 25176 --- [holiday-booking] [           main] o.t.utility.ImageNameSubstitutor         : Image name substitution will be performed by: DefaultImageNameSubstitutor (composite of 'ConfigurationFileImageNameSubstitutor' and 'PrefixingImageNameSubstitutor')
+2026-10-27T16:51:49.813+08:00  INFO 25176 --- [holiday-booking] [           main] org.testcontainers.DockerClientFactory   : Testcontainers version: 2.0.5
+2026-10-27T16:51:50.183+08:00  INFO 25176 --- [holiday-booking] [           main] o.t.d.DockerClientProviderStrategy       : Loaded org.testcontainers.dockerclient.NpipeSocketClientProviderStrategy from ~/.testcontainers.properties, will try it first
+2026-10-27T16:51:50.833+08:00  INFO 25176 --- [holiday-booking] [           main] o.t.d.DockerClientProviderStrategy       : Found Docker environment with local Npipe socket (npipe:////./pipe/docker_engine)
+2026-10-27T16:51:50.835+08:00  INFO 25176 --- [holiday-booking] [           main] org.testcontainers.DockerClientFactory   : Docker host IP address is localhost
+2026-10-27T16:51:50.860+08:00  INFO 25176 --- [holiday-booking] [           main] org.testcontainers.DockerClientFactory   : Connected to docker: 
+  Server Version: 28.4.0
+  API Version: 1.51
+  Operating System: Docker Desktop (containerized)
+  Total Memory: 7780 MB
+  Labels: 
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+2026-10-27T16:51:51.025+08:00  INFO 25176 --- [holiday-booking] [           main] tc.testcontainers/ryuk:0.14.0            : Creating container for image: testcontainers/ryuk:0.14.0
+2026-10-27T16:51:51.181+08:00  INFO 25176 --- [holiday-booking] [           main] o.t.utility.RegistryAuthLocator          : Credential helper/store (docker-credential-desktop) does not have credentials for https://index.docker.io/v1/
+2026-10-27T16:51:51.461+08:00  INFO 25176 --- [holiday-booking] [           main] tc.testcontainers/ryuk:0.14.0            : Container testcontainers/ryuk:0.14.0 is starting: f56d48ea9685fd6c4010f0fbc500fe787e4cbb467d14692e1c07c30b841e91cb
+2026-10-27T16:51:51.974+08:00  INFO 25176 --- [holiday-booking] [           main] tc.testcontainers/ryuk:0.14.0            : Container testcontainers/ryuk:0.14.0 started in PT0.9488606S
+2026-10-27T16:51:51.982+08:00  INFO 25176 --- [holiday-booking] [           main] o.t.utility.RyukResourceReaper           : Ryuk started - will monitor and terminate Testcontainers containers on JVM exit
+2026-10-27T16:51:51.982+08:00  INFO 25176 --- [holiday-booking] [           main] org.testcontainers.DockerClientFactory   : Checking the system...
+2026-10-27T16:51:51.983+08:00  INFO 25176 --- [holiday-booking] [           main] org.testcontainers.DockerClientFactory   : ?? Docker server version should be at least 1.6.0
+2026-10-27T16:51:51.983+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Creating container for image: mysql:8.4
+2026-10-27T16:51:52.086+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Container mysql:8.4 is starting: 985857532ae197b94e9d12b43ca2cd6725150deae57da5be51b860f78d6a6051
+2026-10-27T16:51:52.443+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Waiting for database connection to become available at jdbc:mysql://localhost:49377/holiday_booking_test?forceConnectionTimeZoneToSession=true&connectionTimeZone=UTC using query 'SELECT 1'
+2026-10-27T16:52:02.405+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Container mysql:8.4 started in PT10.4213501S
+2026-10-27T16:52:02.405+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Container is started (JDBC URL: jdbc:mysql://localhost:49377/holiday_booking_test?forceConnectionTimeZoneToSession=true&connectionTimeZone=UTC)
+2026-10-27T16:52:02.409+08:00  INFO 25176 --- [holiday-booking] [           main] c.h.backend.payment.PaymentFlowTest      : Starting PaymentFlowTest using Java 21.0.8 with PID 25176 (started by 38841 in D:\PycharmProjects\Holiday-Booking\backend)
+2026-10-27T16:52:02.410+08:00  INFO 25176 --- [holiday-booking] [           main] c.h.backend.payment.PaymentFlowTest      : The following 1 profile is active: "test"
+2026-10-27T16:52:03.453+08:00  INFO 25176 --- [holiday-booking] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-27T16:52:03.504+08:00  INFO 25176 --- [holiday-booking] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 34 ms. Found 0 JPA repository interfaces.
+2026-10-27T16:52:04.354+08:00  INFO 25176 --- [holiday-booking] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-27T16:52:04.573+08:00  INFO 25176 --- [holiday-booking] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@1ce45e18
+2026-10-27T16:52:04.574+08:00  INFO 25176 --- [holiday-booking] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-27T16:52:04.601+08:00  INFO 25176 --- [holiday-booking] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://localhost:49377/holiday_booking_test?forceConnectionTimeZoneToSession=true&connectionTimeZone=UTC (MySQL 8.4)
+2026-10-27T16:52:05.107+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table `holiday_booking_test`.`flyway_schema_history` does not exist yet
+2026-10-27T16:52:05.114+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.031s)
+2026-10-27T16:52:05.149+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table `holiday_booking_test`.`flyway_schema_history` ...
+2026-10-27T16:52:05.255+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `holiday_booking_test`: << Empty Schema >>
+2026-10-27T16:52:05.299+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `holiday_booking_test` to version "1 - booking schema"
+2026-10-27T16:52:06.549+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `holiday_booking_test` to version "2 - spring session"
+2026-10-27T16:52:06.699+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 2 migrations to schema `holiday_booking_test`, now at version v2 (execution time 00:01.323s)
+2026-10-27T16:52:06.884+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-27T16:52:06.971+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.5.Final
+2026-10-27T16:52:07.353+08:00  INFO 25176 --- [holiday-booking] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-27T16:52:07.398+08:00  WARN 25176 --- [holiday-booking] [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-27T16:52:07.409+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:49377/holiday_booking_test?forceConnectionTimeZoneToSession=true&connectionTimeZone=UTC]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.4.13
+	Default catalog/schema: holiday_booking_test/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-27T16:52:07.426+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.587+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.587+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.590+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.591+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.592+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.593+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.593+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.593+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.593+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.593+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.594+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.594+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.594+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.594+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.595+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.595+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.595+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.595+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.595+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.595+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.595+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.596+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.596+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.596+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.597+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.597+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.597+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.597+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:07.613+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:08.339+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-27T16:52:08.416+08:00  INFO 25176 --- [holiday-booking] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-27T16:52:09.303+08:00  INFO 25176 --- [holiday-booking] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name accountUserDetailsService
+2026-10-27T16:52:10.620+08:00  INFO 25176 --- [holiday-booking] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-10-27T16:52:10.719+08:00  INFO 25176 --- [holiday-booking] [           main] c.h.backend.payment.PaymentFlowTest      : Started PaymentFlowTest in 21.597 seconds (process running for 24.66)
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+WARNING: A Java agent has been loaded dynamically (C:\Users\38841\.m2\repository\net\bytebuddy\byte-buddy-agent\1.18.11\byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+
+[CASE PASSED] com.holidaybooking.backend.payment.PaymentFlowTest#paymentRetryIsIdempotentAndDifferentAttemptIsBlocked
+输入: 同一支付尝试键重试，再尝试另一方式及错误金额
+预期: 未决尝试仅1条；另一尝试被拒绝；错误金额抛异常
+实际: 实际断言值: [AttemptView[id=1, outTradeNo=HB8688b64a5cfc4e958456141d74c87652, method=Alipay, provider=MOCK, status=PENDING, checkoutUrl=mock://HB8688b64a5cfc4e958456141d74c87652, paidAt=null]]
+实际异常: DomainException: 已有待确认支付，请先查询其结果
+业务错误码: PAYMENT_IN_PROGRESS
+实际异常: PaymentAmountMismatchException: 支付金额与订单应付金额不一致
+
+
+[CASE PASSED] com.holidaybooking.backend.payment.PaymentFlowTest#unpaidExpiryReleasesAllHeldNights
+输入: 待付预订后推进时钟16分钟，执行未付单恢复
+预期: 预订EXPIRED，占房夜数0
+实际: 实际断言值: EXPIRED
+实际断言值: 0
+
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 24.24 s -- in com.holidaybooking.backend.payment.PaymentFlowTest
+[INFO] Running com.holidaybooking.backend.payment.PaymentRecoveryTest
+2026-10-27T16:52:12.847+08:00  INFO 25176 --- [holiday-booking] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.holidaybooking.backend.support.MySqlTestSupport]: MySqlTestSupport does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+2026-10-27T16:52:12.859+08:00  INFO 25176 --- [holiday-booking] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.holidaybooking.backend.BackendApplication for test class com.holidaybooking.backend.payment.PaymentRecoveryTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-10-27T16:52:12.911+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Creating container for image: mysql:8.4
+2026-10-27T16:52:13.052+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Container mysql:8.4 is starting: 3bfcf28caeccc2dec2e7dc5ad99ab1deab3ac1111c1ef3ba2bb311217d46b463
+2026-10-27T16:52:13.425+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Waiting for database connection to become available at jdbc:mysql://localhost:59949/holiday_booking_test?forceConnectionTimeZoneToSession=true&connectionTimeZone=UTC using query 'SELECT 1'
+2026-10-27T16:52:24.233+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Container mysql:8.4 started in PT11.32202S
+2026-10-27T16:52:24.233+08:00  INFO 25176 --- [holiday-booking] [           main] tc.mysql:8.4                             : Container is started (JDBC URL: jdbc:mysql://localhost:59949/holiday_booking_test?forceConnectionTimeZoneToSession=true&connectionTimeZone=UTC)
+2026-10-27T16:52:24.234+08:00  INFO 25176 --- [holiday-booking] [           main] c.h.backend.payment.PaymentRecoveryTest  : Starting PaymentRecoveryTest using Java 21.0.8 with PID 25176 (started by 38841 in D:\PycharmProjects\Holiday-Booking\backend)
+2026-10-27T16:52:24.234+08:00  INFO 25176 --- [holiday-booking] [           main] c.h.backend.payment.PaymentRecoveryTest  : The following 1 profile is active: "test"
+2026-10-27T16:52:24.496+08:00  INFO 25176 --- [holiday-booking] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-10-27T16:52:24.512+08:00  INFO 25176 --- [holiday-booking] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 14 ms. Found 0 JPA repository interfaces.
+2026-10-27T16:52:25.105+08:00  INFO 25176 --- [holiday-booking] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Starting...
+2026-10-27T16:52:25.208+08:00  INFO 25176 --- [holiday-booking] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@305db32d
+2026-10-27T16:52:25.209+08:00  INFO 25176 --- [holiday-booking] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-2 - Start completed.
+2026-10-27T16:52:25.215+08:00  INFO 25176 --- [holiday-booking] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:mysql://localhost:59949/holiday_booking_test?forceConnectionTimeZoneToSession=true&connectionTimeZone=UTC (MySQL 8.4)
+2026-10-27T16:52:25.295+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table `holiday_booking_test`.`flyway_schema_history` does not exist yet
+2026-10-27T16:52:25.300+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 2 migrations (execution time 00:00.023s)
+2026-10-27T16:52:25.342+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table `holiday_booking_test`.`flyway_schema_history` ...
+2026-10-27T16:52:25.453+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema `holiday_booking_test`: << Empty Schema >>
+2026-10-27T16:52:25.491+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `holiday_booking_test` to version "1 - booking schema"
+2026-10-27T16:52:27.122+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema `holiday_booking_test` to version "2 - spring session"
+2026-10-27T16:52:27.252+08:00  INFO 25176 --- [holiday-booking] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 2 migrations to schema `holiday_booking_test`, now at version v2 (execution time 00:01.681s)
+2026-10-27T16:52:27.339+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-10-27T16:52:27.383+08:00  INFO 25176 --- [holiday-booking] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-10-27T16:52:27.387+08:00  WARN 25176 --- [holiday-booking] [           main] org.hibernate.orm.deprecation            : HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-10-27T16:52:27.389+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:59949/holiday_booking_test?forceConnectionTimeZoneToSession=true&connectionTimeZone=UTC]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.4.13
+	Default catalog/schema: holiday_booking_test/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-10-27T16:52:27.391+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.506+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.507+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.508+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.508+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.508+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.508+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.508+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.509+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.509+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.509+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.509+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.509+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.510+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.512+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.512+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.512+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.512+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.512+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.517+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.incubating             : HHH90006001: Setting 'hibernate.type.preferred_instant_jdbc_type' is still incubating (see Javadoc of corresponding member of 'org.hibernate.cfg.AvailableSettings')
+2026-10-27T16:52:27.734+08:00  INFO 25176 --- [holiday-booking] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-10-27T16:52:27.761+08:00  INFO 25176 --- [holiday-booking] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-10-27T16:52:28.137+08:00  INFO 25176 --- [holiday-booking] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name accountUserDetailsService
+2026-10-27T16:52:28.569+08:00  INFO 25176 --- [holiday-booking] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-10-27T16:52:28.594+08:00  INFO 25176 --- [holiday-booking] [           main] c.h.backend.payment.PaymentRecoveryTest  : Started PaymentRecoveryTest in 15.727 seconds (process running for 42.535)
+
+[CASE PASSED] com.holidaybooking.backend.payment.PaymentRecoveryTest#unknownExpiredPaymentKeepsInventoryUntilTheProviderConfirmsClosure
+输入: 超过15分钟后渠道UNKNOWN；随后确认CLOSED
+预期: 未知时保留占房，确认关闭后释放并EXPIRED
+实际: 实际断言值: 2
+实际断言值: PENDING
+实际断言值: 0
+实际断言值: EXPIRED
+
+
+[CASE PASSED] com.holidaybooking.backend.payment.PaymentRecoveryTest#delayedVerifiedPaymentUsesTheActualPaidTimeAndIsIdempotent
+输入: 真实支付时间在截止前，回调在16分钟后到达并重复通知
+预期: 预订CONFIRMED；通知仅2条，不重复生成
+实际: 实际断言值: CONFIRMED
+实际断言值: 2
+
+
+[CASE PASSED] com.holidaybooking.backend.payment.PaymentRecoveryTest#reviewRecordsAdministrativeDecisionWithoutConfirmingBooking
+输入: 模拟收到0.01而应付200.00的回调，管理员查询异常并写入复核说明
+预期: 异常记录可查询并记为REVIEWED；预订仍PENDING_PAYMENT；不发生退款或强制确认
+实际: 实际断言值: true
+实际断言值: REVIEWED
+实际断言值: PENDING_PAYMENT
+
+
+[CASE PASSED] com.holidaybooking.backend.payment.PaymentRecoveryTest#mismatchedIncomingFundsAreRecordedWithoutConfirmingBooking
+输入: 应付200元的单收到签名渠道0.01元入账
+预期: 预订PENDING_PAYMENT；记录AMOUNT_MISMATCH和实际金额0.01
+实际: 实际断言值: PENDING_PAYMENT
+实际断言值: AMOUNT_MISMATCH
+实际断言值: 0.01
+
+
+[CASE PASSED] com.holidaybooking.backend.payment.PaymentRecoveryTest#latePaymentCannotReopenAnExpiredBooking
+输入: 先关闭过期单并释放库存，再收到迟到付款
+预期: 预订仍EXPIRED，库存0，异常LATE_PAYMENT
+实际: 实际断言值: EXPIRED
+实际断言值: 0
+实际断言值: LATE_PAYMENT
+
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 18.90 s -- in com.holidaybooking.backend.payment.PaymentRecoveryTest
+[INFO] Running com.holidaybooking.backend.payment.PaymentRulesTest
+
+[CASE PASSED] com.holidaybooking.backend.payment.PaymentRulesTest#paymentMustMatchTrustedAmountAndExactMethod
+输入: 合法Alipay/Wechat及非法大小写、cash、空方式；不匹配或非法金额
+预期: 合法请求接受；非法方式UnsupportedPaymentMethodException；非法金额PaymentAmountMismatchException
+实际: 实际异常: UnsupportedPaymentMethodException: 支付方式只能是 Alipay 或 Wechat
+实际异常: UnsupportedPaymentMethodException: 支付方式只能是 Alipay 或 Wechat
+实际异常: UnsupportedPaymentMethodException: 支付方式只能是 Alipay 或 Wechat
+实际异常: UnsupportedPaymentMethodException: 支付方式只能是 Alipay 或 Wechat
+实际异常: UnsupportedPaymentMethodException: 支付方式只能是 Alipay 或 Wechat
+实际异常: PaymentAmountMismatchException: 支付金额与订单应付金额不一致
+实际异常: PaymentAmountMismatchException: 支付金额与订单应付金额不一致
+实际异常: PaymentAmountMismatchException: 支付金额与订单应付金额不一致
+实际异常: PaymentAmountMismatchException: 支付金额与订单应付金额不一致
+
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.026 s -- in com.holidaybooking.backend.payment.PaymentRulesTest
+测试报告: D:\PycharmProjects\Holiday-Booking\results\java-20261027-164758-848-4afc50\Payment\20261027-165146-877-unit-1674543f\summary.md
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  50.767 s
+[INFO] Finished at: 2026-10-27T16:52:33+08:00
+[INFO] ------------------------------------------------------------------------

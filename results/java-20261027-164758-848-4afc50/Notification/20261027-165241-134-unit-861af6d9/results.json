@@ -1,0 +1,68 @@
+{
+  "cases" : [ {
+    "testClass" : "com.holidaybooking.backend.notification.EmailAdapterTest",
+    "method" : "localAndRestrictedModesDoNotSendMail",
+    "input" : "同一邮件任务分别采用log、disabled和smtp但收件人不在允许名单的配置",
+    "expected" : "依次SIMULATED、FAILED、FAILED；均不调用SMTP发送器",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: SIMULATED", "实际断言值: FAILED", "实际断言值: FAILED" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.notification.EmailAdapterTest",
+    "method" : "smtpOutcomesDistinguishAcceptanceRetryAndUncertainty",
+    "input" : "SMTP发送器依次正常返回、抛认证失败、抛发送结果未知异常",
+    "expected" : "依次SENT、RETRY、UNKNOWN；SENT只代表SMTP接受，不代表最终收件",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: SENT", "实际断言值: RETRY", "实际断言值: UNKNOWN" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.notification.NotificationDeliveryTest",
+    "method" : "retriesUseBoundedBackoffAndStopAfterFourAttempts",
+    "input" : "发送器连续RETRY；推进1、5、30分钟",
+    "expected" : "立即重复调度不重发；总4次后FAILED",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: RETRY", "实际断言值: FAILED" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.notification.NotificationDeliveryTest",
+    "method" : "dailyQuotaDefersDeliveryWithoutConsumingAnAttempt",
+    "input" : "当天发送配额已使用50次，再调度一个待发送确认任务",
+    "expected" : "任务保持READY且attempts=0；不调用发送器；后台列表可查该任务",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: READY", "实际断言值: 0" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.notification.NotificationDeliveryTest",
+    "method" : "reminderIsSkippedAfterArrivalInsteadOfSendingStaleMail",
+    "input" : "确认邮件已发送，时钟推进20天到入住之后",
+    "expected" : "D1为SKIPPED，不调用发送器",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: SKIPPED" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.notification.NotificationDeliveryTest",
+    "method" : "expiredWorkerLeaseIsNotAutomaticallyResent",
+    "input" : "任务SENDING且租约已过期",
+    "expected" : "转UNKNOWN，不调用发送器",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: UNKNOWN" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.notification.NotificationDeliveryTest",
+    "method" : "sameDayArrivalSkipsPriorDayReminder",
+    "input" : "酒店入住当天08:00，为已存在的预订版本重新生成通知任务（先清理本用例任务）",
+    "expected" : "确认任务READY，D1提醒SKIPPED，不补发前一天提醒",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: SKIPPED", "实际断言值: READY" ],
+    "reason" : ""
+  }, {
+    "testClass" : "com.holidaybooking.backend.notification.NotificationDeliveryTest",
+    "method" : "uncertainDeliveryRequiresExplicitAcknowledgementBeforeRetry",
+    "input" : "发送结果UNKNOWN，推进1小时，人工分别不确认/确认重试",
+    "expected" : "UNKNOWN不自动重发；未确认重试拒绝；确认重试后可SENT",
+    "status" : "PASSED",
+    "actual" : [ "实际断言值: UNKNOWN", "实际异常: DomainException: 仅失败任务可重试；未知状态需要明确确认重复发送风险", "业务错误码: NOT_RETRYABLE", "实际断言值: SENT" ],
+    "reason" : ""
+  } ],
+  "startedAt" : "2026-10-27T08:52:41.124552700Z"
+}

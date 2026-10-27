@@ -1,0 +1,49 @@
+# Java 后端测试实际执行报告
+
+开始时间（UTC）：2026-10-27T08:50:22.073485700Z
+
+PASSED = 2；FAILED = 0；SKIPPED = 0；ABORTED = 0；SETUP_FAILED = 0；
+
+实际值按测试断言顺序记录。PASSED 表示全部断言通过；SKIPPED/ABORTED 不是通过。数据库用例使用隔离 MySQL；模拟渠道不能替代真实支付或邮件服务验收。
+
+## com.holidaybooking.backend.membership.MembershipServiceTest#unpaidPurchaseIsIdempotentAndDoesNotGrantBenefits
+
+**输入：** 99元、0.85折扣系数、30天方案；新用户重复提交同一购买键
+
+**预期：** 购买单 PENDING_PAYMENT，保留99.00/0.8500/30快照；相同键返回同ID；会员仍未激活
+
+**执行状态：** PASSED
+
+**实际输出：**
+
+~~~text
+实际断言值: PENDING_PAYMENT
+实际断言值: 99.00
+实际断言值: 0.8500
+实际断言值: 30
+实际断言值: 1
+实际断言值: false
+实际断言值: 1.0000
+实际异常: DomainException: 同一幂等键不能用于不同请求
+业务错误码: IDEMPOTENCY_CONFLICT
+实际异常: DomainException: 记录不存在或无权访问
+业务错误码: NOT_FOUND
+~~~
+
+## com.holidaybooking.backend.membership.MembershipServiceTest#retiringPlanPreventsNewPurchasesButPreservesSnapshots
+
+**输入：** 先创建和购买独立方案，再停用方案，以新键重新购买
+
+**预期：** 公开方案列表隐藏停用项；新购买被拒绝；原购买单仍保留费用快照
+
+**执行状态：** PASSED
+
+**实际输出：**
+
+~~~text
+实际断言值: false
+实际异常: DomainException: 会员方案已停用
+业务错误码: PLAN_RETIRED
+实际断言值: 88.00
+~~~
+

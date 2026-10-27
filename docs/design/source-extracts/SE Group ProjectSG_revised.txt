@@ -1,0 +1,580 @@
+
+--- PAGE 1 ---
+                                        CS1530 SOFTWARE ENGINEERING
+
+                                           Coursework  – Group Project
+
+Release date                        Week 2, October 2026
+Submission & presentation           Weeks 10, 12, 14 and 16 (one per stage)
+date
+Coursework type                     Fill in your answers into the templates, and submit your
+                                    teamwork solutions in one PDF & PPT
+Percentage in final marks           40% total, broken down as follows:
+(overall)                           Breakdown:
+                                    1. Group presentation on requirement report (5%)
+                                    2. Group presentation on design report (5%)
+                                    3. Group presentation on testing report (5%)
+                                    4. Project final rebuttal, presentation & final report
+                                    (25%)
+                                    All team members must attend these 4 on-site
+                                    presentations.
+Submission method                   Via Blackboard (the submission link is ovided in due
+                                    course). Ensure that your TA can open all submitted
+                                    files.
+Late submission policy              Late submission will NOT be accepted.
+Important notes                      •    The use of generative AI is not permitted.
+                                     •    Plagiarism results in award of ZERO mark; all
+                                          submissions will be checked. b)
+                                     •    The formal procedure for submitting coursework
+                                          at SCUPI is strictly followed. Submission link will
+                                          be provided in due course. The submission
+                                          timestamp will be used to check against late
+                                          submission.
+
+
+This document contains
+Section 1. Introduction
+Section 2. Case and tasks with marking scheme
+Section 3. Submission templates
+Appendices. 0-4
+Appendix 5. Peer review form template
+
+Section 1. Introduction
+
+ALL Learning Outcomes are assessed
+
+Staged assessment submissions & presentations
+Group Project Assignment (40% of the course overall marks):
+Assessments will be carried out in four pre-scheduled stages, each with a different weighting. ALL team
+members must attend every stage presentation.
+1. Group presentation on requirement report (5%)
+2. Group presentation on design report (5%)
+3. Group presentation on testing report (5%)
+Project final rebuttal, presentation (25%)
+All reports & presentation ppts, codes/solutions should be submitted electronically through the
+Blackboard platform 2 days before the scheduled date of presentation. Late submission will NOT be
+
+                                                             1
+
+
+--- PAGE 2 ---
+accepted. Please make sure your TA can clearly see your submitted files. Generally, Word/PDF/PPT
+files & source code files are preferred. Please include your names in your group and student IDs when
+submitting your solutions.
+
+If you have any concerns about your grades, please discuss them with your TA within one week
+of the grades being released. Grade disputes raised at the end of the semester will not be
+considered.
+Please present all of your work to receive full credit. You may lose marks if you omit key steps in solving
+the project assignment. However, partial credit may still be awarded for incomplete solutions.
+
+General instruction
+Read the case study in Section 2 and solve the 8 questions raised.
+    1.   Use the templates attached in the Appendices as a reference for producing report in each stage.
+Page limits are stage-specific: Stage 1: ≤ 4 pages, Stage 2: ≤ 12 pages, Stage 3: ≤ 7 pages, Stage 4: ≤ 18
+pages. Unless stated otherwise for a stage, exclude the cover page, figures, screenshots, code listings
+and appendices from the page count. Slide limits: Stage 1: ≤ 7, Stage 2: ≤ 12, Stage 3: ≤ 10, Stage 4: ≤ 12.
+    2.   We will resolve grouping in the beginning weeks.
+    3.   Student contribution and marking.
+         The submission is a group work as indicated in Section 3.
+         In a team, each member should contribute to the project in equal amount of effort. Therefore,
+         students are required to fill up, sign, and submit the peer review form. The contribution (%) in
+         the form indicates the overall contribution of a team member on their submission, to be decided
+         & endorsed by the whole group. The team should arrange a meeting to discuss and complete the
+         peer review form in the presence of all members. The contribution percentage for everyone
+         must be agreed upon by all team members. In the case where a contribution cannot come to an
+         agreement, the team could seek help from the module leader.
+
+Section 2. Case study and related tasks with marking scheme
+You are tasked with designing a Holiday Resort Booking System. The system allows customers to
+search for available rooms, book rooms, and make payments. The holiday resort management staff can
+add or delete rooms to/from the system, update room availability, and view customer bookings. Based
+on the scenario, the core components of the system therefore include:
+Customer/member: a holiday resort customer/member is a person who will pay /has paid the holiday
+resort to stay there. A member will enjoy some discount, compared to a customer. The
+customer/member can search for rooms, book them, and make payments. There is a registration
+process for a customer to become a member, with member fees to be paid.
+Room: represents a resort room, with relevant information such as room type, price and availability.
+Booking: Handles the customer’s/member’s booking details. A reminder is sent 1                     -day earlier to remind
+the customer via email.
+Payment: Processes payments for the booked rooms or membership fees.
+Holiday Resort Management: allows management staff to update room availability and view customer
+bookings.
+
+Expectations & grading criteria for each stage
+
+Stage 1 (5 marks in overall)
+Produce & submit a “Requirements Spec” (RS) report（max 4 pages）according to the above
+descriptions and your own user interview surveys （for any additional features you deem relevant for
+your system to build）for submission & presentation (max 7 ppt slides)
+Grading criteria
+Completeness against the group project requirements. (50%)
+Consistency (40%)
+Additional add-on features (10%)
+
+                                                              2
+
+
+--- PAGE 3 ---
+Stage 2 (5 marks in overall)
+Produce & submit a “Design Spec” (DS) （max 12 pages）& presentation (max 12 ppt slides)
+according to your Stage-1 Requirements Spec.
+
+Grading criteria
+Completeness of your DS showcasing your design details to cover all requirements defined in your RS.
+(50%)
+Consistency of your design (35%)
+Tidiness and readability of your design spec. (15%)
+
+Stage 3 (5 marks in overall)
+Produce & submit a “Test Plan & Test Report” (TR) （max 7 pages）& presentation (max 10 ppt
+slides) according to your Stage-1 RS & stage-2 DS.
+
+Grading criteria
+Completeness of your TR showcasing your test cases & outcome to cover all requirements defined in
+your RS (blackbox testing) & different parts of your codes (white box testing). (50%)
+Consistency of your TR (35%)
+Tidiness of your TR. (15%)
+
+Stage 4 (25 marks in overall)
+
+Your final report （max 18 pages）& presentation (max 12 slides) must address & answer all
+the questions listed in the group project assignment. In addition, should also cover any updates
+or changes upon your previous version of RS, DS, and TR.
+
+Expectation
+Q1. You are supposed to include all OOD high level design details for the case study in Sec 2 based on
+the design principles we learned. Make sure you specify the attributes and method signatures that could
+potentially involve in each class you designed (15%).
+
+Q2. Evaluate the design principles chosen for solving this assignment. Make sure you talk about them
+together with the specific examples from your design and illustrate why you decide to adopt the
+principles and how they improve the system & reflect upon whether you can do better in future with a
+twist in the design decisions you made (20%).
+
+------------------------------------------------------------------------------------------------
+Q3. Provide the finalized UI design & implementation for the following core functions based on the
+interface design principles:
+     ⚫     Room Search and Booking
+     ⚫     Payment Processing
+     ⚫     Room Booking Management
+     ⚫     Member registration
+
+Provide the layout & screenshots of the UI (e.g., webpage or mobile app) with more detailed
+information inside (e.g., the booking record). Explain what UI prototyping tools are used and evaluate
+the choice of such tools, whether you will continue to use it or there could be a better choice? (10 %)
+
+Q4. For each of the UI page, illustrate what interface design principles are used, how they are applied
+with specific examples, and how they improve the interaction between the system and users (e.g.,
+equality, diversity and inclusion). And then proceed with system implementation. (10%)
+
+
+                                                               3
+
+
+--- PAGE 4 ---
+-------------------------------------------------------------------------------------------------------
+After the system is implemented, different types of testing should be conducted to ensure the quality of
+the system.
+
+Q5. Please describe how you test each function implemented in cases that it is working and NOT
+working (e.g., boundary input) by attaching screenshots. For each of the non-working test cases, please
+also specify solutions to the problem. (10%)
+
+-----------------------------------------------------------------------------------------------------
+According to the customers, the system should throw an exception under the following two conditions:
+When the payment amount does not match the price to be paid.
+When the payment method is not "Alipay" or "Wechat"
+
+Q6. Fill in the following code first and provide test cases verifying if the exceptions are thrown
+successfully. (10%)
+
+          public class Payment {
+              private int paymentID;
+              private int bookingID;
+              private double amount;
+              private String paymentMethod; // Example: "Alipay", "Wechat"
+              private boolean isProcessed;
+
+              public Payment(int paymentID, int bookingID, double amount, String paymentMethod) {
+                  this.paymentID = paymentID;
+                  this.bookingID = bookingID;
+                  this.amount = amount;
+                  this.paymentMethod = paymentMethod;
+                  this.isProcessed = false;
+              }
+
+              public boolean processPayment() throws IllegalArgumentException {
+        // Q6.1 - Fill in the Code
+              }
+
+              public boolean isProcessed() {
+                  return isProcessed;
+              }
+
+              public double getAmount() {
+                  return amount;
+              }
+          }
+
+          //Q6.2 - Test cases
+
+----------------------------------------------------------------------------------------------------
+Q7. With the system becoming better, we reach the stage of user testing for our system. Please describe
+how you would organize this process as a team. Make sure the potential problems (you can assume
+these are questions raised from the user testing stage) and related solutions are also considered from
+the perspective of the continuous improvement of the product. Show screenshots from your testing
+stage. (10%)
+
+
+
+                                                                   4
+
+
+--- PAGE 5 ---
+Q8. Until this stage of development, a holiday resort management prototype should be in place. Now
+two change requests are made for you to add two functions for the system built: cancel reservation
+(CR1) , change reservation (CR2), reminder service (CR3). CR1 allows an existing reservation to be
+canceled while CR2 allows a reservation to be changed in terms of the date/number of days and/or
+number of rooms, and/or room types. CR3 reminds customers 3Days/1Day before the reservation date
+via email.  Revise your high-level and detailed design to accommodate the new change requests. There
+is no need to implement the changes, but you need to verify your changed design does not have errors
+or inconsistency in it. (15%)
+
+Any updates or changes upon your previous version of RS, DS, and TR should be included.
+
+Grading criteria for each item listed above
+Completeness 50%
+Consistency 35%
+Tidiness & innovation aspects 15%
+
+
+Section 3. Submission notes and submission templates
+
+Submission notes:
+You must submit one PDF file for your group by the announced submission date for each stage. The
+filename should follow the pattern Group<number>-Stage<no>.pdf (for example, Group3-Stage1.pdf)
+
+•   Use font size 11 throughout.
+
+Submission templates
+Students are encouraged to use the templates below and form your reports for each stage.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                              5
+
+
+--- PAGE 6 ---
+Appendix 0. Cover-page template for all stages
+
+
+CS1530 SOFTWARE ENGINEERING Group Project
+2026/2027 Semester 1
+
+Section number：(1-2)
+Stage no.: (1-4)
+
+Group number: < x >
+
+Student 1 Name:  <Elon Musk>  Student 1< ID: 007>  submitting on behalf of the group
+
+Student 2 Name:      Student 2 ID:
+
+Student 3 Name:      Student 3 ID:
+
+Student 4 Name:      Student 4 ID:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                                  6
+
+
+--- PAGE 7 ---
+For the following templates attached separately for your reference,
+customize and trim for your own project use.
+
+Appendix 1. Requirements Spec Template attached separately for you to use: customise and trim
+for your own project as needed.
+
+Appendix 2. OOD Spec Template attached separately for you to use: customise and trim for your
+own project as needed.
+
+Appendix 3. Test Plan& Test Report Templates attached separately for you to use: customise and
+trim for your own project as needed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                          7
+
+
+--- PAGE 8 ---
+Appendix 4. Final Report Template – Must follow, do not trim.
+
+Q1. <Your answer with the diagram >
+
+Q2.
+
+<Your answer>
+
+Q3.
+
+<Your answer>
+
+Q4.
+
+<Your answers:>
+(1)
+(2)
+(3)
+...
+
+Q5.
+
+<Your answers>
+
+Q6.
+
+public class Payment {
+    private int paymentID;
+    private int bookingID;
+    private double amount;
+    private String paymentMethod; // Example: "Alipay", "Wechat"
+    private boolean isProcessed;
+
+    public Payment(int paymentID, int bookingID, double amount, String paymentMethod) {
+        this.paymentID = paymentID;
+        this.bookingID = bookingID;
+        this.amount = amount;
+        this.paymentMethod = paymentMethod;
+        this.isProcessed = false;
+    }
+
+    public boolean processPayment() throws IllegalArgumentException {
+        // Q6.1 - Fill in the Code
+      < write your answers here and keep the other part of source code unchanged >
+
+    }
+
+    public boolean isProcessed() {
+        return isProcessed;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+                                                                 8
+
+
+--- PAGE 9 ---
+}
+
+//Q6.2 - Test cases
+<write your answers and keep the other part of source code unchanged>
+
+
+Q7.
+
+<Your answers>
+
+
+Q8.
+
+<Your answers>
+
+Updates or changes upon our previous version of RS, DS, and TR.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                              9
+
+
+--- PAGE 10 ---
+Appendix 5. Peer review form template – to print out in hardcopy & fill in to submit it in a
+sealed envelop on spot during the final presentation.
+
+
+
+                                                 CS1530 Coursework
+                                                   Peer review form
+Individual Contribution for Group Report
+
+Section: 1 or 2
+
+Group Number: <x>
+
+
+                                                Contribution (%)
+                                           Please enter an integer
+Name                    ID Number          for contribution, for
+                                           example 20.                              Signature
+
+                                           The sum of this column
+                                           should be 100
+
+
+1.  <my name>            <123456>                       <20>
+
+2.
+
+
+3.
+
+
+4.
+
+
+
+
+
+                                                            END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                             10
