@@ -25,13 +25,29 @@ function Read-LocalConfiguration {
 
     $allowedKeys = @(
         'MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'MYSQL_PORT',
-        'SERVER_PORT', 'BOOTSTRAP_ADMIN_EMAIL', 'BOOTSTRAP_ADMIN_PASSWORD'
+        'SERVER_PORT', 'BOOTSTRAP_ADMIN_EMAIL', 'BOOTSTRAP_ADMIN_PASSWORD',
+        'PAYMENT_MODE', 'EMAIL_MODE', 'JOBS_ENABLED', 'MAIL_HEALTH_ENABLED',
+        'ALIPAY_APP_ID', 'ALIPAY_PRIVATE_KEY', 'ALIPAY_PUBLIC_KEY', 'ALIPAY_SELLER_ID', 'ALIPAY_NOTIFY_URL',
+        'MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD', 'MAIL_FROM',
+        'MAIL_SMTP_AUTH', 'MAIL_STARTTLS', 'MAIL_SSL_ENABLE', 'MAIL_RECIPIENT_ALLOWLIST',
+        'EMAIL_DAILY_LIMIT', 'REMINDER_DAYS', 'API_DOCS_ENABLED', 'SESSION_COOKIE_SECURE'
     )
     $config = @{
         MYSQL_PORT = '3307'
         SERVER_PORT = '8080'
         BOOTSTRAP_ADMIN_EMAIL = ''
         BOOTSTRAP_ADMIN_PASSWORD = ''
+        PAYMENT_MODE = 'disabled'
+        EMAIL_MODE = 'disabled'
+        JOBS_ENABLED = 'false'
+        MAIL_HEALTH_ENABLED = 'false'
+        ALIPAY_APP_ID = ''; ALIPAY_PRIVATE_KEY = ''; ALIPAY_PUBLIC_KEY = ''
+        ALIPAY_SELLER_ID = ''; ALIPAY_NOTIFY_URL = ''
+        MAIL_HOST = 'localhost'; MAIL_PORT = '1025'
+        MAIL_USERNAME = ''; MAIL_PASSWORD = ''; MAIL_FROM = ''
+        MAIL_SMTP_AUTH = 'false'; MAIL_STARTTLS = 'false'; MAIL_SSL_ENABLE = 'false'
+        MAIL_RECIPIENT_ALLOWLIST = ''; EMAIL_DAILY_LIMIT = '50'
+        REMINDER_DAYS = '1'; API_DOCS_ENABLED = 'true'; SESSION_COOKIE_SECURE = 'false'
     }
     $seen = @{}
     $lineNumber = 0
@@ -74,7 +90,7 @@ function Read-LocalConfiguration {
             throw "Replace the example value for $key in the local file."
         }
     }
-    foreach ($key in @('MYSQL_PORT', 'SERVER_PORT')) {
+    foreach ($key in @('MYSQL_PORT', 'SERVER_PORT', 'MAIL_PORT')) {
         $port = 0
         if (-not [int]::TryParse($config[$key], [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
             throw "$key must be an integer from 1 to 65535."
@@ -83,6 +99,32 @@ function Read-LocalConfiguration {
     }
     if ($config.MYSQL_PORT -eq $config.SERVER_PORT) {
         throw 'MYSQL_PORT and SERVER_PORT must be different.'
+    }
+
+    foreach ($key in @('JOBS_ENABLED', 'MAIL_HEALTH_ENABLED', 'MAIL_SMTP_AUTH', 'MAIL_STARTTLS', 'MAIL_SSL_ENABLE', 'API_DOCS_ENABLED', 'SESSION_COOKIE_SECURE')) {
+        if ($config[$key] -cnotin @('true', 'false')) { throw "$key must be true or false." }
+    }
+    if ($config.PAYMENT_MODE -cnotin @('disabled', 'mock', 'alipay-sandbox')) { throw 'Unsupported PAYMENT_MODE.' }
+    if ($config.EMAIL_MODE -cnotin @('disabled', 'log', 'smtp')) { throw 'Unsupported EMAIL_MODE.' }
+    if ($config.REMINDER_DAYS -notmatch '^(1|3|3,1|1,3)$') { throw "REMINDER_DAYS must be '1', '3', '3,1' or '1,3'." }
+    $dailyLimit = 0
+    if (-not [int]::TryParse($config.EMAIL_DAILY_LIMIT, [ref]$dailyLimit) -or $dailyLimit -lt 1) { throw 'EMAIL_DAILY_LIMIT must be a positive integer.' }
+    if ($config.MAIL_STARTTLS -eq 'true' -and $config.MAIL_SSL_ENABLE -eq 'true') { throw 'Choose STARTTLS or implicit SSL, not both.' }
+    $required = @()
+    if ($config.PAYMENT_MODE -eq 'alipay-sandbox') {
+        $required += @('ALIPAY_APP_ID', 'ALIPAY_PRIVATE_KEY', 'ALIPAY_PUBLIC_KEY', 'ALIPAY_SELLER_ID', 'ALIPAY_NOTIFY_URL')
+        $callback = $null
+        if (-not [Uri]::TryCreate($config.ALIPAY_NOTIFY_URL, [UriKind]::Absolute, [ref]$callback) -or
+            $callback.Scheme -ne 'https' -or $callback.AbsolutePath -ne '/api/v1/payment-callbacks/alipay') {
+            throw 'ALIPAY_NOTIFY_URL must be an absolute HTTPS URL ending in /api/v1/payment-callbacks/alipay.'
+        }
+    }
+    if ($config.EMAIL_MODE -eq 'smtp') {
+        $required += @('MAIL_HOST', 'MAIL_FROM')
+        if ($config.MAIL_SMTP_AUTH -eq 'true') { $required += @('MAIL_USERNAME', 'MAIL_PASSWORD') }
+    }
+    foreach ($key in $required) {
+        if ([string]::IsNullOrWhiteSpace($config[$key]) -or $config[$key] -like 'REPLACE_WITH_*') { throw "$key must be configured for the selected channel." }
     }
 
     # Ordinary startup never provisions accounts, even with stale/partial config.
@@ -218,10 +260,11 @@ function Start-LocalBackend {
         DB_USERNAME = 'holiday_booking'
         DB_PASSWORD = $config.MYSQL_PASSWORD
         SPRING_PROFILES_ACTIVE = 'local'
-        PAYMENT_MODE = 'disabled'
-        EMAIL_MODE = 'disabled'
-        JOBS_ENABLED = 'false'
-        MAIL_HEALTH_ENABLED = 'false'
+    }
+    # Apply every allowed channel setting from the file, including empty defaults,
+    # so an old terminal credential cannot silently select a different account.
+    foreach ($key in $config.Keys) {
+        if (-not $environment.ContainsKey($key)) { $environment[$key] = $config[$key] }
     }
     $original = @{}
     try {

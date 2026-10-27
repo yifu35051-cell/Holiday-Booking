@@ -20,12 +20,12 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $sourceRoot = Join-Path $projectRoot 'backend/src/test/java'
 $documentPath = Join-Path $projectRoot 'docs/testing/README.md'
-$caseSpecPath = Join-Path $projectRoot 'scripts/backend-tests/case-specs.json'
+$caseSpecPath = Join-Path $projectRoot 'scripts/test-cases.json'
 $utf8 = New-Object System.Text.UTF8Encoding($false)
 $package = 'com.holidaybooking.backend.'
 
 # 每个模块独立启动 Maven/JVM；依赖的测试数据由该模块自行创建。
-# 新增测试类时更新模块目录，并在 case-specs.json 登记详细规约；缺失时停止生成。
+# 新增测试类时更新模块目录，并在 test-cases.json 登记详细规约；缺失时停止生成。
 $catalog = @(
     @{ Key = 'Shared'; Name = '基础规则与启动'; Classes = @('shared.DomainRulesTest', 'shared.BackendApplicationTests'); Scope = '金额、入住区间、Spring 上下文'; Core = $true },
     @{ Key = 'Identity'; Name = '账户与安全'; Classes = @('identity.IdentityServiceTest', 'identity.ApiSecurityTest'); Scope = '注册、密码、管理员初始化、会话、CSRF、权限'; Core = $true },
@@ -37,11 +37,12 @@ $catalog = @(
     @{ Key = 'MembershipPaid'; Name = '会员支付后生命周期'; Classes = @('membership.MembershipLifecycleTest'); Scope = '通过本地模拟付款验证激活、续期、到期和折扣'; Core = $false },
     @{ Key = 'Notification'; Name = '通知本地逻辑'; Classes = @('notification.NotificationDeliveryTest', 'notification.EmailAdapterTest'); Scope = '调度、租约、重试、配额、模拟 SMTP；不发送真实邮件'; Core = $false },
     @{ Key = 'Integration'; Name = '本地跨模块流程'; Classes = @('integration.BusinessFlowTest'); Scope = '报价至模拟付款、确认及通知任务的业务闭环'; Core = $false },
+    @{ Key = 'Changes'; Name = '取消改订与退款'; Classes = @('booking.BookingChangeTest'); Scope = '取消、版本与库存差集、补款、幂等退款、24小时政策；本地模拟支付'; Core = $false },
     @{ Key = 'MySql'; Name = 'Docker MySQL 事务'; Classes = @('integration.MySqlBookingIT'); Scope = '在独立 MySQL 8.4 容器重用预订用例；需要 Docker'; Core = $false }
 )
 
 # 保留各阶段内部原顺序；全选时先完成单模块，再验证跨模块及MySQL。
-$integratedKeys = @('MembershipPaid', 'Integration', 'MySql')
+$integratedKeys = @('MembershipPaid', 'Integration', 'Changes', 'MySql')
 $catalog = @($catalog | Where-Object { $_.Key -notin $integratedKeys }) +
     @($catalog | Where-Object { $_.Key -in $integratedKeys })
 
@@ -157,7 +158,7 @@ function Write-CaseDocument {
             ))
         }
         foreach ($module in $catalog) {
-            $isIntegrated = $module.Key -in @('MembershipPaid', 'Integration', 'MySql')
+            $isIntegrated = $module.Key -in $integratedKeys
             if ($isIntegrated -ne $page.Integrated) { continue }
             $moduleCases = @($Cases | Where-Object Module -eq $module.Key)
             $lines.AddRange([string[]]@(
@@ -197,8 +198,8 @@ function Write-CaseDocument {
         '每项用例只列功能、具体输入、预期返回和实际结果。按下列顺序阅读，展开当前需要的模块即可。', '',
         '| 顺序 | 用例文档 | 范围 |',
         '| --- | --- | --- |',
-        '| 1 | [单模块测试](01-单模块测试.md) | 基础、账户、房源、预订、会员、后台；可选支付/通知，共42项 |',
-        '| 2 | [集成测试](02-集成测试.md) | 会员支付联动、完整预订流程、MySQL事务，共9项 |', '',
+        "| 1 | [单模块测试](01-单模块测试.md) | 基础、账户、房源、预订、会员、后台；可选支付/通知，共$(@($Cases | Where-Object { $_.Module -notin $integratedKeys }).Count)项 |",
+        "| 2 | [集成测试](02-集成测试.md) | 会员支付联动、完整预订流程、取消改订退款、MySQL事务，共$(@($Cases | Where-Object { $_.Module -in $integratedKeys }).Count)项 |", '',
         '先看[角色功能与测试](../README.md#roles)，区分顾客、员工、管理员。第一阶段含纯单元与MySQL模块测试；第二阶段验证联动。所有数据库测试都需要Docker，不需安装MySQL或先启动后端；Testcontainers自动建立临时MySQL 8.4，不使用开发库。', '',
         '在项目根目录执行：', '',
         '~~~powershell',
