@@ -1,0 +1,8 @@
+# Overlay for building from source. Omit this file when receiving saved images.
+services:
+  backend:
+    build:
+      context: ../backend
+  frontend:
+    build:
+      context: ../frontend

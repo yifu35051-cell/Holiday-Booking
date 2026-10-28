@@ -1,0 +1,49 @@
+# Local MySQL and Mailpit. Run the Java backend on the host.
+name: holiday-booking
+
+services:
+  mysql:
+    image: mysql:8.4
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: holiday_booking
+      MYSQL_USER: holiday_booking
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in config/development.env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in config/development.env}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3307}:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      # Check TCP authentication and database readiness, not just the server process.
+      test:
+        - CMD-SHELL
+        - >-
+          MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --protocol=TCP
+          -h127.0.0.1 -u"$${MYSQL_USER}" "$${MYSQL_DATABASE}"
+          --batch --skip-column-names -e 'SELECT 1' >/dev/null 2>&1
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 30s
+
+  mailpit:
+    image: axllent/mailpit:latest
+    pull_policy: never
+    container_name: holiday-mailpit
+    restart: unless-stopped
+    environment:
+      MP_DATABASE: /data/mailpit.db
+    volumes:
+      - mailpit-data:/data
+    ports:
+      - "127.0.0.1:${MAILPIT_PORT:-1025}:1025"
+      - "127.0.0.1:${MAILPIT_WEB_PORT:-8025}:8025"
+volumes:
+  mysql-data:
+  mailpit-data:

@@ -1,0 +1,116 @@
+# Production deployment for this project, including mock payment and Mailpit.
+# Daily startup uses installed images only. Building is an explicit separate step.
+name: holiday-booking-demo
+services:
+  mysql:
+    image: mysql:8.4
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: holiday_booking
+      MYSQL_USER: holiday_booking
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in config/deployment.env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in config/deployment.env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci", "--default-time-zone=+00:00"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=\"$${MYSQL_PASSWORD}\" mysql --protocol=TCP -h127.0.0.1 -u\"$${MYSQL_USER}\" \"$${MYSQL_DATABASE}\" --batch --skip-column-names -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 36
+      start_period: 30s
+
+  mailpit:
+    image: axllent/mailpit:latest
+    pull_policy: never
+    restart: unless-stopped
+    environment:
+      MP_DATABASE: /data/mailpit.db
+    volumes:
+      - mailpit-data:/data
+    ports:
+      - "127.0.0.1:${MAILPIT_WEB_PORT:-8026}:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    image: holiday-booking-backend:${APP_VERSION:-local-v1}
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
+    environment:
+      # The existing mock adapter and seed loader require this Spring profile.
+      # It is also used for the deployed Docker stack; no dev server is involved.
+      SPRING_PROFILES_ACTIVE: local
+      SERVER_ADDRESS: 0.0.0.0
+      SERVER_PORT: 8080
+      DB_URL: "jdbc:mysql://mysql:3306/holiday_booking?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true"
+      DB_USERNAME: holiday_booking
+      DB_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
+      BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      PAYMENT_MODE: mock
+      EMAIL_MODE: smtp
+      JOBS_ENABLED: "true"
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_FROM: noreply@holiday.example.test
+      MAIL_SMTP_AUTH: "false"
+      MAIL_STARTTLS: "false"
+      MAIL_SSL_ENABLE: "false"
+      MAILPIT_ENABLED: "true"
+      MAILPIT_PORT: 1025
+      EMAIL_DAILY_LIMIT: ${EMAIL_DAILY_LIMIT:-200}
+      API_DOCS_ENABLED: "false"
+      SESSION_COOKIE_SECURE: "false"
+      DEMO_DATA_ENABLED: ${DEMO_DATA_ENABLED:-true}
+      DEMO_CONTAINER: "true"
+      DEMO_CREDENTIALS_FILE: /app/local/demo-accounts.properties
+    volumes:
+      - demo-credentials:/app/local
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health/readiness"]
+      interval: 5s
+      timeout: 5s
+      retries: 48
+      start_period: 60s
+
+  frontend:
+    image: holiday-booking-frontend:${APP_VERSION:-local-v1}
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8088}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  mysql-data:
+  mailpit-data:
+  demo-credentials:
