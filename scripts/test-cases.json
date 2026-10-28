@@ -927,14 +927,14 @@
       ],
       "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
     },
-    "com.holidaybooking.backend.notification.EmailAdapterTest#localAndRestrictedModesDoNotSendMail": {
+    "com.holidaybooking.backend.mail.EmailAdapterTest#localAndRestrictedModesDoNotSendMail": {
       "id": "NO-007",
       "title": "本地、禁用及白名单限制模式",
       "level": "单元/SMTP替身",
       "roles": [
         "System"
       ],
-      "fixture": "Notification一节的Task固定对象；JavaMailSender mock。",
+      "fixture": "EmailSender.Message(replyTo=null, recipient=guest@example.com, subject=subject, body=body); JavaMailSender mock.",
       "input": {
         "modes": [
           "log",
@@ -957,14 +957,14 @@
       ],
       "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
     },
-    "com.holidaybooking.backend.notification.EmailAdapterTest#smtpOutcomesDistinguishAcceptanceRetryAndUncertainty": {
+    "com.holidaybooking.backend.mail.EmailAdapterTest#smtpOutcomesDistinguishAcceptanceRetryAndUncertainty": {
       "id": "NO-008",
       "title": "SMTP 接受、可重试与未知结果区分",
       "level": "单元/SMTP替身",
       "roles": [
         "System"
       ],
-      "fixture": "固定Task；mode=smtp；from=sender@example.com。",
+      "fixture": "EmailSender.Message(replyTo=null, recipient=guest@example.com, subject=subject, body=body); JavaMailSender mock.",
       "input": {
         "transportBehaviors": [
           "正常返回",
@@ -1636,6 +1636,703 @@
         "截止前不抛异常；截止时抛DomainException；零晚区间抛DomainException。"
       ],
       "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+    },
+    "com.holidaybooking.backend.mail.MailboxTest#rolesExchangeMailOnlyAfterAcceptance": {
+      "id": "ML-001",
+      "title": "CUSTOMER向STAFF发送主题Arrival question、正文Please confirm check-in time.",
+      "level": "module",
+      "roles": [
+        "Customer",
+        "Staff",
+        "Admin",
+        "System"
+      ],
+      "fixture": "Independent Docker MySQL; unique registered email per role; fixed clock 2026-10-22T00:00:00Z. SMTP mocked.",
+      "input": {
+        "send": {
+          "recipientEmail": "<STAFF UUID>@example.com",
+          "subject": "Arrival question",
+          "body": "Please confirm check-in time.",
+          "replyToId": null,
+          "Idempotency-Key": "new UUID per new message"
+        },
+        "reply": {
+          "recipientEmail": "<CUSTOMER UUID>@example.com",
+          "subject": "Re: Arrival question",
+          "body": "Check-in is at 15:00.",
+          "replyToId": "$first.id"
+        },
+        "SMTP": "SENT"
+      },
+      "steps": [
+        "CUSTOMER向STAFF发送主题Arrival question、正文Please confirm check-in time.；STAFF回复；ADMIN向CUSTOMER发信"
+      ],
+      "output": "初始READY且收件箱为空；投递后SENT、未读1；回复关联原信；三角色均可发信，陌生人不能读取",
+      "checks": [
+        "初始READY且收件箱为空；投递后SENT、未读1；回复关联原信；三角色均可发信，陌生人不能读取"
+      ],
+      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
+    },
+    "com.holidaybooking.backend.mail.MailboxTest#readTrashAndAdminInspectionAreIndependent": {
+      "id": "ML-002",
+      "title": "客户邮件投递给员工",
+      "level": "module",
+      "roles": [
+        "Customer",
+        "Staff",
+        "Admin",
+        "System"
+      ],
+      "fixture": "Independent Docker MySQL; unique registered email per role; fixed clock 2026-10-22T00:00:00Z. SMTP mocked.",
+      "input": {
+        "send": {
+          "recipientEmail": "<STAFF UUID>@example.com",
+          "subject": "Arrival question",
+          "body": "Please confirm check-in time.",
+          "replyToId": null,
+          "Idempotency-Key": "new UUID per new message"
+        },
+        "read": [
+          true,
+          false
+        ],
+        "visibility": [
+          {
+            "folder": "INBOX",
+            "deleted": true
+          },
+          {
+            "folder": "INBOX",
+            "deleted": false
+          },
+          {
+            "folder": "SENT",
+            "deleted": true
+          }
+        ]
+      },
+      "steps": [
+        "客户邮件投递给员工；管理员读正文；员工标已读、未读、移入INBOX回收站及恢复；客户删除SENT副本"
+      ],
+      "output": "管理员读取不改变未读；员工已读后0、未读后1；各自删除互不影响；管理员始终可见正文，列表无正文",
+      "checks": [
+        "管理员读取不改变未读；员工已读后0、未读后1；各自删除互不影响；管理员始终可见正文，列表无正文"
+      ],
+      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
+    },
+    "com.holidaybooking.backend.mail.MailboxTest#idempotencyValidationAndRateLimitPreventBadMessages": {
+      "id": "ML-003",
+      "title": "同幂等键重复提交同一邮件，再改正文重用",
+      "level": "module",
+      "roles": [
+        "Customer",
+        "Staff",
+        "Admin",
+        "System"
+      ],
+      "fixture": "Independent Docker MySQL; unique registered email per role; fixed clock 2026-10-22T00:00:00Z. SMTP mocked.",
+      "input": {
+        "recipientEmail": "<STAFF UUID>@example.com",
+        "subject": "Question",
+        "body": [
+          "Hello",
+          "Hello",
+          "Changed"
+        ],
+        "Idempotency-Key": "same UUID for first three requests",
+        "invalidRecipient": "missing@holiday.test",
+        "invalidSubject": "Hi\r\nBcc: other@holiday.test",
+        "wrongReplyRecipient": "<STRANGER UUID>@example.com",
+        "newMessageLimit": 30,
+        "rejectedMessageNumber": 31
+      },
+      "steps": [
+        "同幂等键重复提交同一邮件，再改正文重用；未知邮箱、CRLF主题、错误回复对象；同一客户创建第31封邮件"
+      ],
+      "output": "重复返回同一ID且仅1条；变更内容、未知邮箱、注入、错回复均拒绝；每小时最多30封",
+      "checks": [
+        "重复返回同一ID且仅1条；变更内容、未知邮箱、注入、错回复均拒绝；每小时最多30封"
+      ],
+      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
+    },
+    "com.holidaybooking.backend.mail.MailboxTest#uncertainDeliveryRequiresExplicitRetry": {
+      "id": "ML-004",
+      "title": "SMTP首次RETRY",
+      "level": "module",
+      "roles": [
+        "Customer",
+        "Staff",
+        "Admin",
+        "System"
+      ],
+      "fixture": "Independent Docker MySQL; unique registered email per role; fixed clock 2026-10-22T00:00:00Z. SMTP mocked.",
+      "input": {
+        "send": {
+          "recipientEmail": "<STAFF UUID>@example.com",
+          "subject": "Arrival question",
+          "body": "Please confirm check-in time.",
+          "replyToId": null,
+          "Idempotency-Key": "new UUID per new message"
+        },
+        "SMTP": [
+          "RETRY",
+          "UNKNOWN",
+          "SENT"
+        ],
+        "advanceMinutes": 1,
+        "acknowledgeUnknown": [
+          false,
+          true
+        ]
+      },
+      "steps": [
+        "SMTP首次RETRY；推进1分钟后UNKNOWN；尝试不确认和确认重复风险的手动重试；最终SMTP接受"
+      ],
+      "output": "重试到期前不投递；UNKNOWN不自动重发；未确认拒绝，确认后READY，最终SENT且收件人未读1",
+      "checks": [
+        "重试到期前不投递；UNKNOWN不自动重发；未确认拒绝，确认后READY，最终SENT且收件人未读1"
+      ],
+      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
+    },
+    "com.holidaybooking.backend.mail.MailboxTest#httpProtectsRolesCsrfAndAcceptedResponse": {
+      "id": "ML-005",
+      "title": "匿名GET邮箱",
+      "level": "module",
+      "roles": [
+        "Customer",
+        "Staff",
+        "Admin",
+        "System"
+      ],
+      "fixture": "Independent Docker MySQL; unique registered email per role; fixed clock 2026-10-22T00:00:00Z. SMTP mocked.",
+      "input": {
+        "GET": [
+          "/api/v1/mail/messages (anonymous)",
+          "/api/v1/admin/mail/messages (CUSTOMER/STAFF/ADMIN)"
+        ],
+        "POST": "/api/v1/mail/messages",
+        "json": {
+          "recipientEmail": "<STAFF UUID>@example.com",
+          "subject": "Arrival question",
+          "body": "Please confirm check-in time.",
+          "replyToId": null,
+          "Idempotency-Key": "new UUID per new message"
+        },
+        "csrf": [
+          false,
+          true
+        ]
+      },
+      "steps": [
+        "匿名GET邮箱；客户和员工GET管理员邮箱；管理员GET管理员邮箱；客户POST邮件分别无CSRF、有CSRF"
+      ],
+      "output": "依次401、403、403、200、403、202；成功返回data.state=READY和M前缀ID",
+      "checks": [
+        "依次401、403、403、200、403、202；成功返回data.state=READY和M前缀ID"
+      ],
+      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
+    },
+    "com.holidaybooking.backend.mail.MailboxTest#bookingNotificationsAppearInTheSameInbox": {
+      "id": "ML-006",
+      "title": "创建客户预订并用mock支付，联系邮箱为该客户注册邮箱",
+      "level": "module",
+      "roles": [
+        "Customer",
+        "Staff",
+        "Admin",
+        "System"
+      ],
+      "fixture": "Independent Docker MySQL; unique registered email per role; fixed clock 2026-10-22T00:00:00Z. SMTP mocked.",
+      "input": {
+        "basePrice": "100.05",
+        "rooms": 1,
+        "guestsPerRoom": 2,
+        "checkIn": "2026-11-10",
+        "checkOut": "2026-11-12",
+        "contactName": "Guest",
+        "contactEmail": "<CUSTOMER UUID>@example.com",
+        "contactPhone": "+86 13800000000",
+        "paymentAmount": "200.10",
+        "method": "Alipay",
+        "SMTP": "SENT",
+        "read": true,
+        "folder": "INBOX",
+        "deleted": true
+      },
+      "steps": [
+        "创建客户预订并用mock支付，联系邮箱为该客户注册邮箱；确认通知SMTP返回SENT"
+      ],
+      "output": "确认通知以N前缀显示于客户邮箱，正文可读，可标已读及删除；管理员仍可查，陌生人不可查",
+      "checks": [
+        "确认通知以N前缀显示于客户邮箱，正文可读，可标已读及删除；管理员仍可查，陌生人不可查"
+      ],
+      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
+    },
+    "com.holidaybooking.backend.mail.EmailAdapterTest#personalMailUsesAuthenticatedReplyToAndConfiguredFrom": {
+      "id": "EA-003",
+      "title": "smtp模式，MAIL_FROM=system@holiday.test",
+      "level": "module",
+      "roles": [
+        "System"
+      ],
+      "fixture": "Mock JavaMailSender; no network.",
+      "input": {
+        "scenario": "smtp模式，MAIL_FROM=system@holiday.test；用户customer@holiday.test发给staff@holiday.test，主题Question、正文Hello"
+      },
+      "steps": [
+        "smtp模式，MAIL_FROM=system@holiday.test；用户customer@holiday.test发给staff@holiday.test，主题Question、正文Hello"
+      ],
+      "output": "SENT；SMTP From为系统地址、Reply-To为客户地址、To为员工地址，主题正文原样传递",
+      "checks": [
+        "SENT；SMTP From为系统地址、Reply-To为客户地址、To为员工地址，主题正文原样传递"
+      ],
+      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
+    },
+    "com.holidaybooking.backend.mail.MailpitSmokeTest#sendTestMailToMailpit": {
+      "id": "SMTP-001",
+      "title": "SMTP localhost:1025",
+      "level": "module",
+      "roles": [
+        "System"
+      ],
+      "fixture": "Local Mailpit, opt-in -Dmailpit.smoke=true; no MySQL.",
+      "input": {
+        "scenario": "SMTP localhost:1025; HTTP localhost:8025; booking@example.test -> guest@example.test; unique subject mailpit-smoke-UUID"
+      },
+      "steps": [
+        "SMTP localhost:1025; HTTP localhost:8025; booking@example.test -> guest@example.test; unique subject mailpit-smoke-UUID"
+      ],
+      "output": "SMTP accepted; search API HTTP 200 contains unique subject and recipient; skipped unless -Dmailpit.smoke=true",
+      "checks": [
+        "SMTP accepted; search API HTTP 200 contains unique subject and recipient; skipped unless -Dmailpit.smoke=true"
+      ],
+      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
+    },
+    "com.holidaybooking.backend.identity.ApiSecurityTest#portalRoleIsCheckedBeforeCreatingSession": {
+      "id": "PORTAL-001",
+      "title": "分别创建CUSTOMER、STAFF、ADMIN账户",
+      "level": "API/MySQL",
+      "roles": [
+        "Customer",
+        "Staff",
+        "Admin"
+      ],
+      "fixture": "Independent MySQL; unique registered accounts, password=test-password-123; no external channels.",
+      "input": {
+        "email": "<UUID>@example.com",
+        "password": "test-password-123",
+        "storedRoles": [
+          "CUSTOMER",
+          "STAFF",
+          "ADMIN"
+        ],
+        "portalRole": "wrong role then matching role"
+      },
+      "steps": [
+        "分别创建CUSTOMER、STAFF、ADMIN账户；使用正确密码先登录错误portalRole，再登录匹配portalRole"
+      ],
+      "output": "错误入口403和PORTAL_ROLE_MISMATCH，不授予会话；匹配入口200且返回数据库真实角色",
+      "checks": [
+        "错误入口403和PORTAL_ROLE_MISMATCH，不授予会话；匹配入口200且返回数据库真实角色"
+      ],
+      "coverageNote": "Pending execution; actual response evidence is generated by Test-Backend.ps1."
+    },
+    "com.holidaybooking.backend.management.ManagementApiTest#userDirectoryRequiresAdminAndDoesNotExposePasswords": {
+      "id": "PORTAL-002",
+      "title": "ADMIN和STAFF分别GET /api/v1/admin/users?page=0&size=20",
+      "level": "API/MySQL",
+      "roles": [
+        "Customer",
+        "Staff",
+        "Admin"
+      ],
+      "fixture": "Independent MySQL; unique registered accounts, password=test-password-123; no external channels.",
+      "input": {
+        "method": "GET",
+        "path": "/api/v1/admin/users",
+        "page": 0,
+        "size": [
+          20,
+          101
+        ],
+        "roles": [
+          "ADMIN",
+          "STAFF"
+        ]
+      },
+      "steps": [
+        "ADMIN和STAFF分别GET /api/v1/admin/users?page=0&size=20；ADMIN再请求size=101"
+      ],
+      "output": "ADMIN得到200分页账户且无密码字段；STAFF为403；非法分页422",
+      "checks": [
+        "ADMIN得到200分页账户且无密码字段；STAFF为403；非法分页422"
+      ],
+      "coverageNote": "Pending execution; actual response evidence is generated by Test-Backend.ps1."
+    },
+    "com.holidaybooking.backend.membership.MembershipServiceTest#purchaseHistoryIsScopedToTheCurrentUser": {
+      "id": "PORTAL-003",
+      "title": "客户购买99元/30天/0.85方案",
+      "level": "API/MySQL",
+      "roles": [
+        "Customer"
+      ],
+      "fixture": "Independent MySQL; unique registered accounts, password=test-password-123; no external channels.",
+      "input": {
+        "fee": "99.00",
+        "discountRatio": "0.8500",
+        "durationDays": 30,
+        "purchaseKey": "history-key",
+        "page": 0,
+        "size": 20,
+        "readers": [
+          "owner",
+          "other customer"
+        ]
+      },
+      "steps": [
+        "客户购买99元/30天/0.85方案；本人和另一个客户分页查询purchases"
+      ],
+      "output": "本人total=1，返回同购买单和支付单；另一客户total=0，不泄漏其他账户记录",
+      "checks": [
+        "本人total=1，返回同购买单和支付单；另一客户total=0，不泄漏其他账户记录"
+      ],
+      "coverageNote": "Pending execution; actual response evidence is generated by Test-Backend.ps1."
+    },
+    "com.holidaybooking.backend.booking.BookingChangeTest#changeHistoryRemainsOwnedAndPaginated": {
+      "id": "PORTAL-004",
+      "title": "客户为本人未付款订单创建取消报价",
+      "level": "API/MySQL",
+      "roles": [
+        "Customer"
+      ],
+      "fixture": "Independent MySQL; unique registered accounts, password=test-password-123; no external channels.",
+      "input": {
+        "booking": "unpaid, 100.05/night, 2026-11-10 to 2026-11-12",
+        "quoteKind": "CANCEL",
+        "page": 0,
+        "size": 20,
+        "readers": [
+          "owner",
+          "other customer"
+        ]
+      },
+      "steps": [
+        "客户为本人未付款订单创建取消报价；本人分页查看changes；另一个客户读取同订单changes"
+      ],
+      "output": "本人total=1且返回报价ID；其他客户拒绝，不能通过历史列表越权",
+      "checks": [
+        "本人total=1且返回报价ID；其他客户拒绝，不能通过历史列表越权"
+      ],
+      "coverageNote": "Pending execution; actual response evidence is generated by Test-Backend.ps1."
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#setupVerifiesLoginAndNeverStoresPlainPin": {
+      "id": "SW-001",
+      "title": "新用户先用错误登录密码初始化，再用test-password-123设置824631",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "loginPassword": [
+          "wrong-password",
+          "test-password-123"
+        ],
+        "pin": "824631",
+        "confirmation": "824631"
+      },
+      "steps": [
+        "新用户先用错误登录密码初始化，再用test-password-123设置824631"
+      ],
+      "output": "错误不配置钱包且失败次数保留；正确后余额0.00，数据库仅BCrypt哈希",
+      "checks": [
+        "错误不配置钱包且失败次数保留；正确后余额0.00，数据库仅BCrypt哈希"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#creditsAreIdempotentAndBoundToAmount": {
+      "id": "SW-002",
+      "title": "同一充值键请求1000.00两次，再复用键改为100.00",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "amount": [
+          "1000.00",
+          "1000.00",
+          "100.00"
+        ],
+        "pin": "824631",
+        "idempotencyKey": "same UUID for all requests"
+      },
+      "steps": [
+        "同一充值键请求1000.00两次，再复用键改为100.00"
+      ],
+      "output": "余额1000.00、充值流水1条；不同金额复用键被拒绝",
+      "checks": [
+        "余额1000.00、充值流水1条；不同金额复用键被拒绝"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#wrongPinCounterCommitsAndUnlocksAfterTimeout": {
+      "id": "SW-003",
+      "title": "已设置824631；连续5次用111111充值，随后用正确密码，推进时钟16分钟再充值100.00",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "initialBalance": "1000.00",
+        "wrongPin": "111111",
+        "wrongRequests": 5,
+        "correctPin": "824631",
+        "amount": "100.00",
+        "advanceMinutes": 16
+      },
+      "steps": [
+        "已设置824631；连续5次用111111充值，随后用正确密码，推进时钟16分钟再充值100.00"
+      ],
+      "output": "第5次及锁定期返回SANDBOX_WALLET_LOCKED；解锁后余额1100.00，剩余次数5",
+      "checks": [
+        "第5次及锁定期返回SANDBOX_WALLET_LOCKED；解锁后余额1100.00，剩余次数5"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#concurrentAuthorizationDebitsOnlyOnce": {
+      "id": "SW-004",
+      "title": "余额1000.00，待付200.10；两线程同时授权同一支付尝试824631",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "initialBalance": "1000.00",
+        "orderAmount": "200.10",
+        "pin": "824631",
+        "attemptId": "$A",
+        "concurrentRequests": 2
+      },
+      "steps": [
+        "余额1000.00，待付200.10；两线程同时授权同一支付尝试824631"
+      ],
+      "output": "两请求均读到SUCCEEDED；余额799.90；PAYMENT流水仅1条",
+      "checks": [
+        "两请求均读到SUCCEEDED；余额799.90；PAYMENT流水仅1条"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#insufficientFundsOwnershipAndExpiryCannotPay": {
+      "id": "SW-005",
+      "title": "零余额用户应付200.10；尝试授权；另一用户尝试授权该订单；最后推进16分钟再授权",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "balance": "0.00",
+        "orderAmount": "200.10",
+        "attemptId": "$A",
+        "owner": "$U",
+        "otherUser": "$V",
+        "pin": "824631",
+        "advanceMinutes": 16
+      },
+      "steps": [
+        "零余额用户应付200.10；尝试授权；另一用户尝试授权该订单；最后推进16分钟再授权"
+      ],
+      "output": "分别拒绝余额不足、越权、过期；订单未成功；无扣款流水",
+      "checks": [
+        "分别拒绝余额不足、越权、过期；订单未成功；无扣款流水"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#cancelledAttemptCanBeReplacedButNeverCharged": {
+      "id": "SW-006",
+      "title": "200.10待付尝试取消，再授权旧尝试，再用Wechat创建新尝试付款",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "balance": "1000.00",
+        "orderAmount": "200.10",
+        "oldMethod": "Alipay",
+        "newMethod": "Wechat",
+        "pin": "824631"
+      },
+      "steps": [
+        "200.10待付尝试取消，再授权旧尝试，再用Wechat创建新尝试付款"
+      ],
+      "output": "旧尝试CLOSED且不能扣款；新尝试成功；余额799.90",
+      "checks": [
+        "旧尝试CLOSED且不能扣款；新尝试成功；余额799.90"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#changePinInvalidatesOldSecret": {
+      "id": "SW-007",
+      "title": "原密码824631修改为635284；分别用旧、新密码充值100.00",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "oldPin": "824631",
+        "pin": "635284",
+        "confirmation": "635284",
+        "creditAmount": "100.00"
+      },
+      "steps": [
+        "原密码824631修改为635284；分别用旧、新密码充值100.00"
+      ],
+      "output": "旧密码拒绝，新密码成功；余额1100.00",
+      "checks": [
+        "旧密码拒绝，新密码成功；余额1100.00"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#bookingRefundCreditsOriginalWalletOnlyOnce": {
+      "id": "SW-008",
+      "title": "余额1000.00支付预订200.10；24小时前取消，重复刷新退款并重放渠道退款",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "balance": "1000.00",
+        "payment": "200.10",
+        "pin": "824631",
+        "refund": "200.10",
+        "refreshCount": 2,
+        "providerReplayCount": 1
+      },
+      "steps": [
+        "余额1000.00支付预订200.10；24小时前取消，重复刷新退款并重放渠道退款"
+      ],
+      "output": "退款SUCCEEDED，余额恢复1000.00；REFUND流水1条，不重复入账",
+      "checks": [
+        "退款SUCCEEDED，余额恢复1000.00；REFUND流水1条，不重复入账"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#membershipRequiresWalletPaymentAndActivatesOnce": {
+      "id": "SW-009",
+      "title": "余额1000.00，购买默认199.00会员；授权同一支付两次",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "balance": "1000.00",
+        "planId": 1,
+        "fee": "199.00",
+        "method": "Wechat",
+        "pin": "824631",
+        "authorizeCount": 2
+      },
+      "steps": [
+        "余额1000.00，购买默认199.00会员；授权同一支付两次"
+      ],
+      "output": "付款前无会员，付款后激活；重复授权不延长有效期；余额801.00",
+      "checks": [
+        "付款前无会员，付款后激活；重复授权不延长有效期；余额801.00"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletTest#historicalMockRefundDoesNotMintWalletFunds": {
+      "id": "SW-010",
+      "title": "余额1000.00，用内部历史模拟入口支付200.10而非钱包扣款；退款200.10两次",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "balance": "1000.00",
+        "historicalPayment": "200.10",
+        "walletDebit": false,
+        "refund": "200.10",
+        "providerReplayCount": 2
+      },
+      "steps": [
+        "余额1000.00，用内部历史模拟入口支付200.10而非钱包扣款；退款200.10两次"
+      ],
+      "output": "历史付款退款成功；钱包余额仍1000.00；不伪造REFUND流水",
+      "checks": [
+        "历史付款退款成功；钱包余额仍1000.00；不伪造REFUND流水"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletApiTest#authenticationCsrfAndRemovedBypassAreEnforced": {
+      "id": "SW-011",
+      "title": "匿名GET钱包；登录后不带CSRF设置PIN；登录且带CSRF调用旧succeed路由",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "requests": [
+          "GET /sandbox/wallet (anonymous)",
+          "POST /sandbox/wallet/setup {} (no CSRF)",
+          "POST /dev/payment-attempts/1/succeed (authenticated + CSRF)"
+        ]
+      },
+      "steps": [
+        "匿名GET钱包；登录后不带CSRF设置PIN；登录且带CSRF调用旧succeed路由"
+      ],
+      "output": "分别401、403、404；不存在无密码支付入口",
+      "checks": [
+        "分别401、403、404；不存在无密码支付入口"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+    },
+    "com.holidaybooking.backend.payment.SandboxWalletApiTest#walletResponseNeverContainsCredentials": {
+      "id": "SW-012",
+      "title": "用登录密码test-password-123设置pin=824631、confirmation=824631，再GET钱包",
+      "level": "集成",
+      "roles": [
+        "Customer",
+        "System"
+      ],
+      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "input": {
+        "loginPassword": "test-password-123",
+        "pin": "824631",
+        "confirmation": "824631",
+        "requests": [
+          "POST /sandbox/wallet/setup",
+          "GET /sandbox/wallet"
+        ]
+      },
+      "steps": [
+        "用登录密码test-password-123设置pin=824631、confirmation=824631，再GET钱包"
+      ],
+      "output": "200；configured=true，balance=0.00，currency=CNY；响应无pin、pinHash或loginPassword",
+      "checks": [
+        "200；configured=true，balance=0.00，currency=CNY；响应无pin、pinHash或loginPassword"
+      ],
+      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
     }
   }
 }

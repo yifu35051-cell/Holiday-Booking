@@ -3,7 +3,7 @@
 .SYNOPSIS
     Start Docker MySQL and the Spring Boot backend using one local config file.
 .DESCRIPTION
-    Reads .env.mysql as data, never executes it. File values override inherited
+    Reads config/development.env as data, never executes it. File values override inherited
     development settings for this process only; the original values are restored
     when the script finishes. Ctrl+C stops Java; MySQL data and container remain.
 #>
@@ -11,7 +11,10 @@
 param(
     [string]$ConfigFile = '',
     [switch]$CheckOnly,
-    [switch]$InitializeAdmin
+    [switch]$InitializeAdmin,
+    [switch]$SeedDemoData,
+    [switch]$SeedOnly,
+    [switch]$UseRunningDatabase
 )
 
 $script:ProjectRoot = Split-Path -Parent $PSScriptRoot
@@ -20,7 +23,7 @@ function Read-LocalConfiguration {
     param([string]$Path, [switch]$EnableAdminInitialization)
 
     if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) {
-        throw 'Local config is missing. Copy .env.mysql.example to .env.mysql and edit it first.'
+        throw 'Copy config/development.env.example to config/development.env and edit it first.'
     }
 
     $allowedKeys = @(
@@ -30,7 +33,8 @@ function Read-LocalConfiguration {
         'ALIPAY_APP_ID', 'ALIPAY_PRIVATE_KEY', 'ALIPAY_PUBLIC_KEY', 'ALIPAY_SELLER_ID', 'ALIPAY_NOTIFY_URL',
         'MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD', 'MAIL_FROM',
         'MAIL_SMTP_AUTH', 'MAIL_STARTTLS', 'MAIL_SSL_ENABLE', 'MAIL_RECIPIENT_ALLOWLIST',
-        'EMAIL_DAILY_LIMIT', 'REMINDER_DAYS', 'API_DOCS_ENABLED', 'SESSION_COOKIE_SECURE'
+        'EMAIL_DAILY_LIMIT', 'REMINDER_DAYS', 'API_DOCS_ENABLED', 'SESSION_COOKIE_SECURE',
+        'MAILPIT_ENABLED', 'MAILPIT_PORT', 'MAILPIT_WEB_PORT'
     )
     $config = @{
         MYSQL_PORT = '3307'
@@ -48,6 +52,7 @@ function Read-LocalConfiguration {
         MAIL_SMTP_AUTH = 'false'; MAIL_STARTTLS = 'false'; MAIL_SSL_ENABLE = 'false'
         MAIL_RECIPIENT_ALLOWLIST = ''; EMAIL_DAILY_LIMIT = '50'
         REMINDER_DAYS = '1'; API_DOCS_ENABLED = 'true'; SESSION_COOKIE_SECURE = 'false'
+        MAILPIT_ENABLED = 'false'; MAILPIT_PORT = '1025'; MAILPIT_WEB_PORT = '8025'
     }
     $seen = @{}
     $lineNumber = 0
@@ -63,7 +68,7 @@ function Read-LocalConfiguration {
         $key = $Matches[1]
         $value = $Matches[2].Trim()
         if ($key -cnotin $allowedKeys) {
-            throw "Unsupported setting at line $lineNumber. See .env.mysql.example."
+            throw "Unsupported setting at line $lineNumber. See config/development.env.example."
         }
         if ($seen.ContainsKey($key)) { throw "Duplicate setting: $key." }
         $seen[$key] = $true
@@ -90,7 +95,7 @@ function Read-LocalConfiguration {
             throw "Replace the example value for $key in the local file."
         }
     }
-    foreach ($key in @('MYSQL_PORT', 'SERVER_PORT', 'MAIL_PORT')) {
+    foreach ($key in @('MYSQL_PORT', 'SERVER_PORT', 'MAIL_PORT', 'MAILPIT_PORT', 'MAILPIT_WEB_PORT')) {
         $port = 0
         if (-not [int]::TryParse($config[$key], [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
             throw "$key must be an integer from 1 to 65535."
@@ -101,7 +106,7 @@ function Read-LocalConfiguration {
         throw 'MYSQL_PORT and SERVER_PORT must be different.'
     }
 
-    foreach ($key in @('JOBS_ENABLED', 'MAIL_HEALTH_ENABLED', 'MAIL_SMTP_AUTH', 'MAIL_STARTTLS', 'MAIL_SSL_ENABLE', 'API_DOCS_ENABLED', 'SESSION_COOKIE_SECURE')) {
+    foreach ($key in @('JOBS_ENABLED', 'MAIL_HEALTH_ENABLED', 'MAIL_SMTP_AUTH', 'MAIL_STARTTLS', 'MAIL_SSL_ENABLE', 'API_DOCS_ENABLED', 'SESSION_COOKIE_SECURE', 'MAILPIT_ENABLED')) {
         if ($config[$key] -cnotin @('true', 'false')) { throw "$key must be true or false." }
     }
     if ($config.PAYMENT_MODE -cnotin @('disabled', 'mock', 'alipay-sandbox')) { throw 'Unsupported PAYMENT_MODE.' }
@@ -110,6 +115,17 @@ function Read-LocalConfiguration {
     $dailyLimit = 0
     if (-not [int]::TryParse($config.EMAIL_DAILY_LIMIT, [ref]$dailyLimit) -or $dailyLimit -lt 1) { throw 'EMAIL_DAILY_LIMIT must be a positive integer.' }
     if ($config.MAIL_STARTTLS -eq 'true' -and $config.MAIL_SSL_ENABLE -eq 'true') { throw 'Choose STARTTLS or implicit SSL, not both.' }
+    if ($config.MAILPIT_ENABLED -eq 'true') {
+        if ($config.MAIL_HOST -notin @('localhost', '127.0.0.1') -or $config.MAIL_PORT -ne $config.MAILPIT_PORT) {
+            throw 'Local Mailpit requires MAIL_HOST=127.0.0.1 (or localhost) and MAIL_PORT=MAILPIT_PORT.'
+        }
+        if ($config.MAIL_SMTP_AUTH -ne 'false' -or $config.MAIL_STARTTLS -ne 'false' -or $config.MAIL_SSL_ENABLE -ne 'false') {
+            throw 'The supplied local Mailpit service uses SMTP without authentication or TLS.'
+        }
+        if (@(@($config.MYSQL_PORT, $config.SERVER_PORT, $config.MAILPIT_PORT, $config.MAILPIT_WEB_PORT) | Select-Object -Unique).Count -ne 4) {
+            throw 'MySQL, HTTP, Mailpit SMTP and Mailpit web ports must be distinct.'
+        }
+    }
     $required = @()
     if ($config.PAYMENT_MODE -eq 'alipay-sandbox') {
         $required += @('ALIPAY_APP_ID', 'ALIPAY_PRIVATE_KEY', 'ALIPAY_PUBLIC_KEY', 'ALIPAY_SELLER_ID', 'ALIPAY_NOTIFY_URL')
@@ -165,7 +181,10 @@ function Invoke-CapturedCommand {
 }
 
 function Assert-LocalTools {
-    foreach ($tool in @('docker', 'java')) {
+    param([switch]$DatabaseAlreadyRunning)
+    $requiredTools = @('java')
+    if (-not $DatabaseAlreadyRunning) { $requiredTools += 'docker' }
+    foreach ($tool in $requiredTools) {
         if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
             throw "$tool is not available. Install Docker Desktop and JDK 21, then open a new terminal."
         }
@@ -174,7 +193,7 @@ function Assert-LocalTools {
     if ($java.Code -ne 0 -or $java.Text -notmatch 'version "21[."]') {
         throw 'The java command must use JDK 21. Check PATH and JAVA_HOME.'
     }
-    # Maven Wrapper prefers JAVA_HOME, so also validate it when explicitly set.
+    # Keep the installed JDK and the explicit development JAVA_HOME consistent.
     if ($env:JAVA_HOME) {
         $homeJava = Join-Path $env:JAVA_HOME 'bin/java.exe'
         if (-not (Test-Path -LiteralPath $homeJava)) { throw 'JAVA_HOME does not point to a JDK.' }
@@ -183,6 +202,7 @@ function Assert-LocalTools {
             throw 'JAVA_HOME must point to JDK 21.'
         }
     }
+    if ($DatabaseAlreadyRunning) { return }
     $compose = Invoke-CapturedCommand 'docker' @('compose', 'version')
     if ($compose.Code -ne 0) { throw 'Docker Compose v2 is required (docker compose version).' }
 }
@@ -222,29 +242,76 @@ function Wait-DockerEngine {
 function Invoke-DatabaseCompose {
     param([string]$ConfigPath, [string[]]$Arguments)
 
-    $composeFile = Join-Path $script:ProjectRoot 'compose.mysql.yaml'
+    $composeFile = Join-Path $script:ProjectRoot 'config/compose.dev.yaml'
     & docker compose --env-file $ConfigPath -f $composeFile @Arguments
     if ($LASTEXITCODE -ne 0) {
-        throw 'Database command failed. Inspect Docker/Compose output; Java was not started. Existing data is retained.'
+        throw 'Database command failed. Missing images require the README first-setup pull command; startup never builds or pulls. Inspect Docker/Compose output. Java was not started; existing data is retained.'
     }
 }
 
-function Invoke-BackendMaven {
-    $wrapper = Join-Path $script:ProjectRoot 'backend/mvnw.cmd'
-    $pom = Join-Path $script:ProjectRoot 'backend/pom.xml'
-    & $wrapper -f $pom spring-boot:run
+function Invoke-BackendJava {
+    # Daily startup never invokes Maven or downloads dependencies.
+    $jar = Join-Path $script:ProjectRoot 'backend/target/backend-0.0.1-SNAPSHOT.jar'
+    & java -jar $jar
     if ($LASTEXITCODE -ne 0) {
-        throw 'Spring Boot exited with an error. Check the preceding Maven/application log. MySQL remains running.'
+        throw 'Spring Boot exited with an error. Check the application log. MySQL remains running.'
     }
+}
+
+function Start-LocalMailpit {
+    param([string]$ConfigPath, [hashtable]$Config)
+    # A pre-existing manual container belongs to the user: reuse it, never delete
+    # or recreate it to make Compose take ownership.
+    $existing = Invoke-CapturedCommand 'docker' @('inspect', 'holiday-mailpit', '--format', '{{json .Config.Labels}}')
+    $managed = $false
+    if ($existing.Code -eq 0) {
+        $labels = $existing.Text | ConvertFrom-Json
+        $managed = $null -ne $labels -and $labels.'com.docker.compose.project' -eq 'holiday-booking' -and $labels.'com.docker.compose.service' -eq 'mailpit'
+    }
+    if ($existing.Code -eq 0 -and -not $managed) {
+        $started = Invoke-CapturedCommand 'docker' @('start', 'holiday-mailpit')
+        if ($started.Code -ne 0) { throw 'Existing holiday-mailpit could not start; inspect its Docker logs.' }
+        foreach ($binding in @(@('1025/tcp', $Config.MAILPIT_PORT), @('8025/tcp', $Config.MAILPIT_WEB_PORT))) {
+            $mapped = Invoke-CapturedCommand 'docker' @('port', 'holiday-mailpit', $binding[0])
+            if ($mapped.Code -ne 0 -or $mapped.Text -notmatch (':' + [regex]::Escape($binding[1]) + '(\r?\n|$)')) {
+                throw 'Existing holiday-mailpit port mapping differs from the file; adjust the file or manage the container manually. It has not been deleted.'
+            }
+        }
+        Write-Host 'Reusing existing holiday-mailpit; its storage and Compose ownership are unchanged.'
+    } else {
+        Invoke-DatabaseCompose $ConfigPath @('up', '-d', '--no-build', '--pull', 'never', '--wait', '--wait-timeout', '60', 'mailpit')
+    }
+    # Verify the SMTP greeting rather than treating a running container as ready.
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    do {
+        $client = New-Object Net.Sockets.TcpClient
+        try {
+            $connection = $client.ConnectAsync('127.0.0.1', [int]$Config.MAILPIT_PORT)
+            if (-not $connection.Wait(2000)) { throw 'SMTP connection timed out' }
+            $stream = $client.GetStream()
+            $stream.ReadTimeout = 2000
+            $reader = New-Object IO.StreamReader($stream)
+            if ($reader.ReadLine() -notmatch '^220[ -]') { throw 'Invalid SMTP greeting' }
+            Write-Host "Mailpit ready; web UI: http://localhost:$($Config.MAILPIT_WEB_PORT)"
+            return
+        } catch {
+            if ([DateTime]::UtcNow -ge $deadline) { throw 'Mailpit SMTP did not become ready; inspect docker logs holiday-mailpit.' }
+        } finally { $client.Dispose() }
+        Start-Sleep -Seconds 1
+    } while ($true)
 }
 
 function Start-LocalBackend {
-    param([string]$Path, [switch]$ValidateOnly, [switch]$EnableAdminInitialization)
+    param([string]$Path, [switch]$ValidateOnly, [switch]$EnableAdminInitialization,
+          [switch]$EnableDemoData, [switch]$ImportOnly, [switch]$DatabaseAlreadyRunning)
 
-    if (-not $Path) { $Path = Join-Path $script:ProjectRoot '.env.mysql' }
+    if (-not $Path) { $Path = Join-Path $script:ProjectRoot 'config/development.env' }
     $config = Read-LocalConfiguration $Path -EnableAdminInitialization:$EnableAdminInitialization
     $configPath = (Resolve-Path -LiteralPath $Path).Path
-    Assert-LocalTools
+    Assert-LocalTools -DatabaseAlreadyRunning:$DatabaseAlreadyRunning
+    if (($EnableDemoData -or $ImportOnly) -and $config.PAYMENT_MODE -ne 'mock') {
+        throw 'Demo data requires PAYMENT_MODE=mock in the local config.'
+    }
 
     # One source of truth for both Compose and JDBC, even if the shell has old env values.
     $environment = @{
@@ -252,6 +319,11 @@ function Start-LocalBackend {
         MYSQL_PASSWORD = $config.MYSQL_PASSWORD
         MYSQL_PORT = $config.MYSQL_PORT
         SERVER_PORT = $config.SERVER_PORT
+        SERVER_ADDRESS = '127.0.0.1'
+        DEMO_DATA_ENABLED = ($EnableDemoData -or $ImportOnly).ToString().ToLowerInvariant()
+        DEMO_CREDENTIALS_FILE = Join-Path $script:ProjectRoot '.local/demo-accounts.properties'
+        DEMO_EXIT_AFTER_SEED = $ImportOnly.ToString().ToLowerInvariant()
+        DEMO_CONTAINER = 'false'
         BOOTSTRAP_ADMIN_EMAIL = $config.BOOTSTRAP_ADMIN_EMAIL
         BOOTSTRAP_ADMIN_PASSWORD = $config.BOOTSTRAP_ADMIN_PASSWORD
         BOOKING_BOOTSTRAP_EMAIL = $config.BOOTSTRAP_ADMIN_EMAIL
@@ -266,6 +338,10 @@ function Start-LocalBackend {
     foreach ($key in $config.Keys) {
         if (-not $environment.ContainsKey($key)) { $environment[$key] = $config[$key] }
     }
+    if ($ImportOnly) {
+        $environment.SERVER_PORT = '0'
+        $environment.JOBS_ENABLED = 'false'
+    }
     $original = @{}
     try {
         foreach ($key in $environment.Keys) {
@@ -273,29 +349,40 @@ function Start-LocalBackend {
             [Environment]::SetEnvironmentVariable($key, $environment[$key], 'Process')
         }
         Write-Host "[1/4] Validating local config (MySQL=$($config.MYSQL_PORT), HTTP=$($config.SERVER_PORT))..."
-        Invoke-DatabaseCompose $configPath @('config', '--quiet')
+        if (-not $DatabaseAlreadyRunning) { Invoke-DatabaseCompose $configPath @('config', '--quiet') }
         if ($ValidateOnly) {
             Write-Host 'Configuration and tools validated. No container or Java process was started.'
             return
         }
 
-        Write-Host '[2/4] Checking Docker Linux engine...'
-        Wait-DockerEngine
-        Write-Host '[3/4] Starting MySQL and waiting for its health check...'
-        Invoke-DatabaseCompose $configPath @('up', '-d', '--wait', '--wait-timeout', '180', 'mysql')
+        if (-not (Test-Path -LiteralPath (Join-Path $script:ProjectRoot 'backend/target/backend-0.0.1-SNAPSHOT.jar'))) {
+            throw 'Backend JAR is missing. Prepare once: .\backend\mvnw.cmd -f .\backend\pom.xml -DskipTests package. See README development setup.'
+        }
+
+        if (-not $DatabaseAlreadyRunning) {
+            Write-Host '[2/4] Checking Docker Linux engine...'
+            Wait-DockerEngine
+            Write-Host '[3/4] Starting MySQL and waiting for its health check...'
+            Invoke-DatabaseCompose $configPath @('up', '-d', '--no-build', '--pull', 'never', '--wait', '--wait-timeout', '180', 'mysql')
+            if ($config.MAILPIT_ENABLED -eq 'true') { Start-LocalMailpit $configPath $config }
+        }
 
         # Do not confuse a failed second launch with the first backend still running.
         $listeners = [Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners()
-        if (@($listeners | Where-Object { $_.Port -eq [int]$config.SERVER_PORT }).Count -gt 0) {
+        if (-not $ImportOnly -and @($listeners | Where-Object { $_.Port -eq [int]$config.SERVER_PORT }).Count -gt 0) {
             throw "HTTP port $($config.SERVER_PORT) is already in use. Stop the previous backend or change SERVER_PORT in the file."
         }
         if (-not $config.BOOTSTRAP_ADMIN_EMAIL) {
             Write-Host 'Ordinary startup: administrator initialization is disabled (optional: -InitializeAdmin).'
         }
-        Write-Host "[4/4] Starting Spring Boot; health URL: http://localhost:$($config.SERVER_PORT)/actuator/health"
-        Write-Host 'Java runs in this terminal. Ctrl+C stops Java; MySQL and its data are retained.'
+        if ($ImportOnly) {
+            Write-Host '[4/4] Importing demo data using a temporary HTTP port; jobs are disabled and Java exits after import.'
+        } else {
+            Write-Host "[4/4] Starting Spring Boot; health URL: http://localhost:$($config.SERVER_PORT)/actuator/health"
+            Write-Host 'Java runs in this terminal. Ctrl+C stops Java; MySQL and its data are retained.'
+        }
         Push-Location $script:ProjectRoot
-        try { Invoke-BackendMaven } finally { Pop-Location }
+        try { Invoke-BackendJava } finally { Pop-Location }
     }
     finally {
         foreach ($key in $original.Keys) {
@@ -308,7 +395,8 @@ function Start-LocalBackend {
 if ($MyInvocation.InvocationName -ne '.') {
     $ErrorActionPreference = 'Stop'
     try {
-        Start-LocalBackend -Path $ConfigFile -ValidateOnly:$CheckOnly -EnableAdminInitialization:$InitializeAdmin
+        Start-LocalBackend -Path $ConfigFile -ValidateOnly:$CheckOnly -EnableAdminInitialization:$InitializeAdmin `
+            -EnableDemoData:$SeedDemoData -ImportOnly:$SeedOnly -DatabaseAlreadyRunning:$UseRunningDatabase
     }
     catch {
         Write-Host "[ERROR] $($_.Exception.Message)" -ForegroundColor Red

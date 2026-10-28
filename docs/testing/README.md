@@ -4,8 +4,8 @@
 
 | 顺序 | 用例文档 | 范围 |
 | --- | --- | --- |
-| 1 | [单模块测试](01-单模块测试.md) | 基础、账户、房源、预订、会员、后台；可选支付/通知，共42项 |
-| 2 | [集成测试](02-集成测试.md) | 会员支付联动、完整预订流程、MySQL事务，共9项 |
+| 1 | [单模块测试](01-单模块测试.md) | 基础、账户、房源、预订、会员、后台；可选支付/通知，共55项 |
+| 2 | [集成测试](02-集成测试.md) | 会员支付联动、完整预订流程、取消改订退款、钱包收银台、MySQL事务，共28项 |
 
 先看[角色功能与测试](../README.md#roles)，区分顾客、员工、管理员。第一阶段含纯单元与MySQL模块测试；第二阶段验证联动。所有数据库测试都需要Docker，不需安装MySQL或先启动后端；Testcontainers自动建立临时MySQL 8.4，不使用开发库。
 
@@ -16,6 +16,8 @@
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Core
 # 单独选择一个或多个模块
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Identity,Booking
+# 钱包密码、扣款、退款、并发和HTTP安全；12项新用例，尚未执行
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules SandboxPayment
 # 按角色检查核心模块（同一用例可关联多个角色）
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Core -Role Customer
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Core -Role Staff
@@ -28,9 +30,9 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.p
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules All
 ~~~
 
-不带参数显示选择菜单；-List只列模块；-PrepareOnly只生成待执行文档，不运行测试。
+不带参数显示选择菜单；-List只列模块；-PrepareOnly只生成待执行文档，不运行测试。MailpitSmoke不包含在All中，需单独选择并传-MavenOptions "-Dmailpit.smoke=true"才会向本机容器发信。
 
-当前记录：java-20261027-164758-848-4afc50。
+当前记录：待执行；仅生成说明，未运行测试。
 
 执行后自动更新两份用例表的实际结果，未选模块显示未执行。本次日志、逐类完整报告及两份表的快照保存在results/java-时间戳/，历史记录保留。单模块失败后仍会继续其他所选模块。
 

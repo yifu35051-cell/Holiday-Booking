@@ -34,15 +34,18 @@ $catalog = @(
     @{ Key = 'Membership'; Name = '会员未付款业务'; Classes = @('membership.MembershipServiceTest'); Scope = '方案、购买单、未付款无权益、归属'; Core = $true },
     @{ Key = 'Management'; Name = '后台管理 API'; Classes = @('management.ManagementApiTest'); Scope = '角色管理、员工接口、审计、参数校验'; Core = $true },
     @{ Key = 'Payment'; Name = '支付本地逻辑'; Classes = @('payment.PaymentRulesTest', 'payment.PaymentFlowTest', 'payment.PaymentRecoveryTest', 'payment.AlipaySignatureTest'); Scope = '金额、模拟付款、恢复、异常复核、本地签名；不访问真实渠道'; Core = $false },
+    @{ Key = 'SandboxPayment'; Name = '沙箱钱包与收银台'; Classes = @('payment.SandboxWalletTest', 'payment.SandboxWalletApiTest'); Scope = '密码、锁定、余额、幂等扣款、取消、会员、退款及HTTP防绕过；独立MySQL'; Core = $false },
     @{ Key = 'MembershipPaid'; Name = '会员支付后生命周期'; Classes = @('membership.MembershipLifecycleTest'); Scope = '通过本地模拟付款验证激活、续期、到期和折扣'; Core = $false },
-    @{ Key = 'Notification'; Name = '通知本地逻辑'; Classes = @('notification.NotificationDeliveryTest', 'notification.EmailAdapterTest'); Scope = '调度、租约、重试、配额、模拟 SMTP；不发送真实邮件'; Core = $false },
+    @{ Key = 'Notification'; Name = '预订业务通知'; Classes = @('notification.NotificationDeliveryTest'); Scope = '预订确认、提醒调度、过期抑制、租约、重试及配额；模拟SMTP'; Core = $false },
+    @{ Key = 'Mail'; Name = '个人邮箱与邮件传输'; Classes = @('mail.MailboxTest', 'mail.EmailAdapterTest'); Scope = '三角色邮箱、管理员审计、权限、幂等、系统通知收件与通用SMTP适配'; Core = $false },
+    @{ Key = 'MailpitSmoke'; Name = '本地Mailpit连通性'; Classes = @('mail.MailpitSmokeTest'); Scope = '显式传-Dmailpit.smoke=true才发送到本机容器并检查捕获；默认跳过'; Core = $false },
     @{ Key = 'Integration'; Name = '本地跨模块流程'; Classes = @('integration.BusinessFlowTest'); Scope = '报价至模拟付款、确认及通知任务的业务闭环'; Core = $false },
     @{ Key = 'Changes'; Name = '取消改订与退款'; Classes = @('booking.BookingChangeTest'); Scope = '取消、版本与库存差集、补款、幂等退款、24小时政策；本地模拟支付'; Core = $false },
     @{ Key = 'MySql'; Name = 'Docker MySQL 事务'; Classes = @('integration.MySqlBookingIT'); Scope = '在独立 MySQL 8.4 容器重用预订用例；需要 Docker'; Core = $false }
 )
 
 # 保留各阶段内部原顺序；全选时先完成单模块，再验证跨模块及MySQL。
-$integratedKeys = @('MembershipPaid', 'Integration', 'Changes', 'MySql')
+$integratedKeys = @('MembershipPaid', 'Integration', 'Changes', 'SandboxPayment', 'MySql')
 $catalog = @($catalog | Where-Object { $_.Key -notin $integratedKeys }) +
     @($catalog | Where-Object { $_.Key -in $integratedKeys })
 
@@ -50,11 +53,14 @@ function Show-Modules {
     Write-Host '模块编号 / 标识 / 功能：'
     for ($i = 0; $i -lt $catalog.Count; $i++) {
         if ($i -eq 0) { Write-Host '第一阶段：单模块检查（纯单元无需数据库；持久化与MockMvc使用MySQL）' }
-        if ($catalog[$i].Key -eq 'MembershipPaid') { Write-Host '第二阶段：跨模块与MySQL集成' }
+        if ($catalog[$i].Key -in $integratedKeys -and ($i -eq 0 -or $catalog[$i - 1].Key -notin $integratedKeys)) {
+            Write-Host '第二阶段：跨模块与MySQL集成'
+        }
         Write-Host ('{0,2}. {1,-16} {2}：{3}' -f ($i + 1), $catalog[$i].Key, $catalog[$i].Name, $catalog[$i].Scope)
     }
     Write-Host 'All = 先单模块再集成；Core = 核心六模块；-Stage Modules/Integrated = 仅指定阶段。'
     Write-Host '-Role Customer/Staff/Admin/Guest/System 可按用例归属筛选；System不是账户角色。'
+    Write-Host 'MailpitSmoke须单独选择并传-MavenOptions "-Dmailpit.smoke=true"；All不包含该外部容器检查。'
 }
 
 function Read-Cases {
@@ -199,7 +205,7 @@ function Write-CaseDocument {
         '| 顺序 | 用例文档 | 范围 |',
         '| --- | --- | --- |',
         "| 1 | [单模块测试](01-单模块测试.md) | 基础、账户、房源、预订、会员、后台；可选支付/通知，共$(@($Cases | Where-Object { $_.Module -notin $integratedKeys }).Count)项 |",
-        "| 2 | [集成测试](02-集成测试.md) | 会员支付联动、完整预订流程、取消改订退款、MySQL事务，共$(@($Cases | Where-Object { $_.Module -in $integratedKeys }).Count)项 |", '',
+        "| 2 | [集成测试](02-集成测试.md) | 会员支付联动、完整预订流程、取消改订退款、钱包收银台、MySQL事务，共$(@($Cases | Where-Object { $_.Module -in $integratedKeys }).Count)项 |", '',
         '先看[角色功能与测试](../README.md#roles)，区分顾客、员工、管理员。第一阶段含纯单元与MySQL模块测试；第二阶段验证联动。所有数据库测试都需要Docker，不需安装MySQL或先启动后端；Testcontainers自动建立临时MySQL 8.4，不使用开发库。', '',
         '在项目根目录执行：', '',
         '~~~powershell',
@@ -218,7 +224,7 @@ function Write-CaseDocument {
         '# 全选：严格先第一阶段、再第二阶段',
         'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules All',
         '~~~', '',
-        '不带参数显示选择菜单；-List只列模块；-PrepareOnly只生成待执行文档，不运行测试。', '',
+        '不带参数显示选择菜单；-List只列模块；-PrepareOnly只生成待执行文档，不运行测试。MailpitSmoke不包含在All中，需单独选择并传-MavenOptions "-Dmailpit.smoke=true"才会向本机容器发信。', '',
         "当前记录：$RunLabel。", '',
         '执行后自动更新两份用例表的实际结果，未选模块显示未执行。本次日志、逐类完整报告及两份表的快照保存在results/java-时间戳/，历史记录保留。单模块失败后仍会继续其他所选模块。', '',
         '退出码：0=全部所选用例通过；1=构建/测试/报告异常；2=存在跳过或中止。-PrepareOnly会重置当前用例表，历史results不受影响。'
@@ -246,6 +252,7 @@ foreach ($token in (($Modules -join ',') -split '[,，\s]+')) {
     if (-not $token) { continue }
     if ($token -eq 'All' -or $token -eq 'Core') {
         foreach ($module in $catalog) {
+            if ($module.Key -eq 'MailpitSmoke') { continue }
             if ($token -eq 'All' -or $module.Core) { $selected[$module.Key] = $true }
         }
         continue
