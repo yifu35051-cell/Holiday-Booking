@@ -81,7 +81,9 @@ public class SecurityConfig {
                                                 "/api/v1/room-types/**",
                                                 "/api/v1/availability",
                                                 "/api/v1/membership/plans",
-                                                "/actuator/health")
+                                                "/actuator/health",
+                                                "/actuator/health/readiness",
+                                                "/actuator/health/liveness")
                                         .permitAll()
                                         .requestMatchers(
                                                 HttpMethod.POST,

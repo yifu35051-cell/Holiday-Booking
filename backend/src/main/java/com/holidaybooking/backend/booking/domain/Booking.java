@@ -15,7 +15,8 @@ public class Booking extends BaseEntity {
     public enum Status {
         PENDING_PAYMENT,
         CONFIRMED,
-        EXPIRED
+        EXPIRED,
+        CANCELLED
     }
 
     @Column(nullable = false)
@@ -85,5 +86,22 @@ public class Booking extends BaseEntity {
         if (status == Status.PENDING_PAYMENT) {
             status = Status.EXPIRED;
         }
+    }
+
+    public void cancel() {
+        if (status != Status.CONFIRMED && status != Status.PENDING_PAYMENT) {
+            throw DomainException.conflict("BOOKING_STATE", "当前预订不能取消");
+        }
+        status = Status.CANCELLED;
+    }
+
+    public void amend(QuoteSnapshot snapshot) {
+        if (status != Status.CONFIRMED) {
+            throw DomainException.conflict("BOOKING_STATE", "仅已确认预订可以改订");
+        }
+        currentRevision++;
+        checkIn = snapshot.checkIn();
+        checkOut = snapshot.checkOut();
+        totalAmount = snapshot.total();
     }
 }

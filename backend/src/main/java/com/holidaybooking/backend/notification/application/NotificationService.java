@@ -1,5 +1,7 @@
 package com.holidaybooking.backend.notification.application;
 
+import com.holidaybooking.backend.mail.domain.DeliveryPolicy;
+import com.holidaybooking.backend.mail.domain.EmailSender;
 import com.holidaybooking.backend.notification.domain.*;
 import com.holidaybooking.backend.shared.application.PageResult;
 import com.holidaybooking.backend.shared.config.BookingProperties;
@@ -14,7 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.*;
 import org.springframework.transaction.support.TransactionTemplate;
 
-/** 预订通知与入住前一天提醒。业务事务内创建任务，事务外投递，并记录可恢复的处理状态。 */
+/** 预订确认与可配置的 D3/D1 提醒。任务在业务事务内建立，实际发送在事务外完成。 */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -46,7 +48,7 @@ public class NotificationService {
                         + checkIn
                         + "\n离店："
                         + checkOut
-                        + "\n已付金额：CNY "
+                        + "\n预订总额：CNY "
                         + amount.toPlainString()
                         + "\n请凭预订信息联系酒店。";
         tasks.schedule(
@@ -59,34 +61,42 @@ public class NotificationService {
                 now,
                 null,
                 "READY");
-        // 按酒店当地日期计算“前一天”，而非简单减去 24 小时。
-        Instant due =
-                checkIn.minusDays(1)
-                        .atTime(settings.getReminderTime())
-                        .atZone(settings.getZone())
-                        .toInstant();
-        boolean sameDay = !now.atZone(settings.getZone()).toLocalDate().isBefore(checkIn);
-        tasks.schedule(
-                booking,
-                revision,
-                "REMINDER_D1",
-                recipient,
-                "Holiday Booking 入住提醒",
-                content,
-                due.isBefore(now) ? now : due,
-                checkIn.atTime(settings.getCheckInTime()).atZone(settings.getZone()).toInstant(),
-                sameDay ? "SKIPPED" : "READY");
+        // 使用当地日历而非固定小时差；新预订已错过的提醒保留为 SKIPPED，避免连发过时邮件。
+        // 已存在的 READY 任务停机后仍可补发，直到入住截止时间，由领取逻辑判断。
+        for (int days : new LinkedHashSet<>(settings.getReminderDays())) {
+            if (days != 1 && days != 3) {
+                throw new IllegalStateException("Reminder days must contain only 1 or 3");
+            }
+            Instant due =
+                    checkIn.minusDays(days)
+                            .atTime(settings.getReminderTime())
+                            .atZone(settings.getZone())
+                            .toInstant();
+            tasks.schedule(
+                    booking,
+                    revision,
+                    "REMINDER_D" + days,
+                    recipient,
+                    "Holiday Booking 入住提醒",
+                    content,
+                    due,
+                    checkIn.atTime(settings.getCheckInTime())
+                            .atZone(settings.getZone())
+                            .toInstant(),
+                    due.isBefore(now) ? "SKIPPED" : "READY");
+        }
     }
 
     @Scheduled(fixedDelayString = "${booking.job-delay-ms:60000}")
     public void scheduled() {
-        if (settings.isJobsEnabled()) {
+        if (settings.isJobsEnabled() && !"disabled".equals(settings.getEmailMode())) {
             dispatch();
         }
     }
 
     /** 先领取任务并提交租约，再调用邮件服务，最后单独保存结果。 网络请求不持有任务锁；进程崩溃后，超时租约转为 UNKNOWN，等待人工核对。 */
     public void dispatch() {
+        if ("disabled".equals(settings.getEmailMode())) return;
         tx.executeWithoutResult(status -> tasks.recoverAbandoned(clock.instant()));
         var dueTaskIds = tx.execute(status -> tasks.due(clock.instant(), 50));
         if (dueTaskIds == null) {
@@ -118,7 +128,10 @@ public class NotificationService {
 
         EmailSender.Result result;
         try {
-            result = sender.send(task);
+            result =
+                    sender.sendMessage(
+                            new EmailSender.Message(
+                                    null, task.recipient(), task.subject(), task.body()));
         } catch (RuntimeException exception) {
             // 发送异常可能发生在 SMTP 已接受邮件之后，不能直接假定邮件未发出。
             result =
@@ -126,31 +139,11 @@ public class NotificationService {
                             EmailSender.Outcome.UNKNOWN, "Unexpected transport failure");
         }
 
-        DeliveryUpdate update = nextDeliveryState(task, result);
+        var update = DeliveryPolicy.next(task.attempts(), result, clock.instant());
         tx.executeWithoutResult(
                 status ->
                         tasks.complete(
                                 task, update.state(), update.detail(), update.nextAttempt()));
-    }
-
-    private record DeliveryUpdate(String state, String detail, Instant nextAttempt) {}
-
-    private DeliveryUpdate nextDeliveryState(
-            NotificationRepository.Task task, EmailSender.Result result) {
-        String state = result.outcome().name();
-        Instant nextAttempt = clock.instant();
-
-        // 首次失败后依次等待 1、5、30 分钟，最多尝试四次。
-        if (result.outcome() == EmailSender.Outcome.RETRY) {
-            if (task.attempts() >= 4) {
-                state = "FAILED";
-            } else {
-                int delayMinutes = new int[] {1, 5, 30}[task.attempts() - 1];
-                nextAttempt = nextAttempt.plus(Duration.ofMinutes(delayMinutes));
-            }
-        }
-
-        return new DeliveryUpdate(state, result.detail(), nextAttempt);
     }
 
     public record TaskView(

@@ -38,6 +38,44 @@ class ApiSecurityTest extends MySqlTestSupport {
 
     @Test
     @CaseSpec(
+            input = "分别创建CUSTOMER、STAFF、ADMIN账户；使用正确密码先登录错误portalRole，再登录匹配portalRole",
+            expected = "错误入口403和PORTAL_ROLE_MISMATCH，不授予会话；匹配入口200且返回数据库真实角色")
+    void portalRoleIsCheckedBeforeCreatingSession() throws Exception {
+        for (var role : UserAccount.Role.values()) {
+            String email = UUID.randomUUID() + "@example.com";
+            long id =
+                    Long.parseLong(
+                            identity.register(email, "test-password-123", "Portal user").id());
+            transactions.executeWithoutResult(status -> accounts.lock(id).changeRole(role));
+            String wrong = role == UserAccount.Role.CUSTOMER ? "ADMIN" : "CUSTOMER";
+            String prefix =
+                    "{\"email\":\""
+                            + email
+                            + "\",\"password\":\"test-password-123\",\"portalRole\":\"";
+            mvc.perform(
+                            post("/api/v1/auth/login")
+                                    .with(csrf())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(prefix + wrong + "\"}"))
+                    .andDo(TestEvidence::http)
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("PORTAL_ROLE_MISMATCH"))
+                    .andExpect(
+                            org.springframework.security.test.web.servlet.response
+                                    .SecurityMockMvcResultMatchers.unauthenticated());
+            mvc.perform(
+                            post("/api/v1/auth/login")
+                                    .with(csrf())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(prefix + role.name() + "\"}"))
+                    .andDo(TestEvidence::http)
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.role").value(role.name()));
+        }
+    }
+
+    @Test
+    @CaseSpec(
             input = "获取匿名CSRF→密码登录→用旧token退出→刷新token退出→查询本人",
             expected = "登录200且会话变化；本人CUSTOMER；旧token403；正确退出204；退出后401")
     void loginRotatesSessionAndCsrfThenLogoutInvalidatesAuthentication() throws Exception {

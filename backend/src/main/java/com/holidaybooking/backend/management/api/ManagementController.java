@@ -222,6 +222,14 @@ public class ManagementController {
         return ApiResponse.of(identity.changeRole(actor(authentication), id, request.role()));
     }
 
+    @GetMapping("/users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ApiResponse<PageResult<IdentityService.UserView>> users(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.of(identity.list(page, size));
+    }
+
     @GetMapping("/payment-exceptions")
     @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<Map<String, Object>>> exceptions(

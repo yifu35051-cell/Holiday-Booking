@@ -19,6 +19,8 @@ public class BookingProperties {
     private int maxRooms = 10;
     private LocalTime checkInTime = LocalTime.of(15, 0);
     private LocalTime reminderTime = LocalTime.of(9, 0);
+    // 基础模式为 D1；配置 3,1 时同时安排 D3 和 D1。
+    private List<Integer> reminderDays = List.of(1);
     private boolean jobsEnabled = true;
     private String bootstrapEmail = "";
     private String bootstrapPassword = "";

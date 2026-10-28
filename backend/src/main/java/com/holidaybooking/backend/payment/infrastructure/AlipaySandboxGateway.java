@@ -65,6 +65,56 @@ public class AlipaySandboxGateway implements PaymentGateway {
         return "ALIPAY_SANDBOX";
     }
 
+    /** 使用稳定 out_request_no；重试先查询，结果不明确时保留 UNKNOWN。 */
+    public RefundState refund(RefundCommand command) {
+        try {
+            var query = new AlipayTradeFastpayRefundQueryRequest();
+            query.setBizContent(
+                    json.writeValueAsString(
+                            Map.of(
+                                    "out_trade_no",
+                                    command.outTradeNo(),
+                                    "out_request_no",
+                                    command.requestNo())));
+            var known = client.execute(query);
+            if (known.isSuccess()) {
+                var body =
+                        json.readTree(known.getBody())
+                                .path("alipay_trade_fastpay_refund_query_response");
+                if ("REFUND_SUCCESS".equals(body.path("refund_status").asText())
+                        && command.outTradeNo().equals(body.path("out_trade_no").asText())
+                        && command.requestNo().equals(body.path("out_request_no").asText())
+                        && command.amount()
+                                        .compareTo(
+                                                new BigDecimal(body.path("refund_amount").asText()))
+                                == 0) {
+                    return RefundState.SUCCEEDED;
+                }
+            }
+            var request = new AlipayTradeRefundRequest();
+            request.setBizContent(
+                    json.writeValueAsString(
+                            Map.of(
+                                    "out_trade_no",
+                                    command.outTradeNo(),
+                                    "out_request_no",
+                                    command.requestNo(),
+                                    "refund_amount",
+                                    command.amount().toPlainString(),
+                                    "refund_reason",
+                                    "Booking cancellation or amendment")));
+            var response = client.execute(request);
+            if (response.isSuccess()
+                    && command.outTradeNo().equals(response.getOutTradeNo())
+                    && command.amount().compareTo(new BigDecimal(response.getRefundFee())) == 0) {
+                return RefundState.SUCCEEDED;
+            }
+        } catch (AlipayApiException | RuntimeException exception) {
+            // 不记录密钥或完整渠道报文；同一退款号由下一轮查询恢复。
+        }
+        return RefundState.UNKNOWN;
+    }
+
     public Result create(Command command) {
         requireAlipay(command);
         var request = new AlipayTradePrecreateRequest();

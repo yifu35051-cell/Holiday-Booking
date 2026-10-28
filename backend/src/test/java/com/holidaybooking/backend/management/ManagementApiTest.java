@@ -25,6 +25,35 @@ class ManagementApiTest extends BusinessTestSupport {
 
     @Test
     @CaseSpec(
+            input = "ADMIN和STAFF分别GET /api/v1/admin/users?page=0&size=20；ADMIN再请求size=101",
+            expected = "ADMIN得到200分页账户且无密码字段；STAFF为403；非法分页422")
+    void userDirectoryRequiresAdminAndDoesNotExposePasswords() throws Exception {
+        long admin = user(), staff = user();
+        identity.changeRole(staff, admin, UserAccount.Role.ADMIN);
+        identity.changeRole(admin, staff, UserAccount.Role.STAFF);
+        var adminAuth =
+                org.springframework.security.test.web.servlet.request
+                        .SecurityMockMvcRequestPostProcessors.user(Long.toString(admin));
+        mvc.perform(get("/api/v1/admin/users").with(adminAuth))
+                .andDo(TestEvidence::http)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items").isArray())
+                .andExpect(jsonPath("$.data.items[0].passwordHash").doesNotExist());
+        mvc.perform(
+                        get("/api/v1/admin/users")
+                                .with(
+                                        org.springframework.security.test.web.servlet.request
+                                                .SecurityMockMvcRequestPostProcessors.user(
+                                                Long.toString(staff))))
+                .andDo(TestEvidence::http)
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/admin/users?size=101").with(adminAuth))
+                .andDo(TestEvidence::http)
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    @Test
+    @CaseSpec(
             input = "管理员将测试用户升为 STAFF，再降为 CUSTOMER；测试用户请求后台列表与管理员审计",
             expected = "员工可查后台预订但审计403；降级后旧认证访问后台403；记录本用户的CHANGE_ROLE审计；禁止改自己角色")
     void roleChangesImmediatelyAffectAuthorizationAndAreAudited() throws Exception {

@@ -118,6 +118,21 @@ public class JpaCatalogRepository implements CatalogRepository {
                 > 0;
     }
 
+    public List<Long> availableForChange(
+            long typeId, LocalDate start, LocalDate end, long bookingId) {
+        return jdbc.sql(
+                        """
+                select r.id from room r where r.room_type_id=? and r.active=true
+                and not exists(select 1 from room_night n where n.room_id=r.id
+                    and n.stay_date>=? and n.stay_date<?
+                    and (n.booking_id is null or n.booking_id<>? or n.state<>'BOOKED'))
+                order by r.id
+                """)
+                .params(typeId, start, end, bookingId)
+                .query(Long.class)
+                .list();
+    }
+
     public void hold(long roomId, List<LocalDate> dates, long bookingId) {
         for (LocalDate date : dates) {
             jdbc.sql(

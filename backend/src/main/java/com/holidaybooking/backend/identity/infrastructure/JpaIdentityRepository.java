@@ -11,8 +11,31 @@ import org.springframework.stereotype.Repository;
 public class JpaIdentityRepository implements IdentityRepository {
     @PersistenceContext private EntityManager entityManager;
 
+    public java.util.List<UserAccount> list(int offset, int size) {
+        return entityManager
+                .createQuery("from UserAccount order by id desc", UserAccount.class)
+                .setFirstResult(offset)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public long count() {
+        return entityManager
+                .createQuery("select count(u) from UserAccount u", Long.class)
+                .getSingleResult();
+    }
+
     public Optional<UserAccount> find(long id) {
         return Optional.ofNullable(entityManager.find(UserAccount.class, id));
+    }
+
+    public boolean administratorExists() {
+        return entityManager
+                        .createQuery(
+                                "select count(u) from UserAccount u where u.role=:role", Long.class)
+                        .setParameter("role", UserAccount.Role.ADMIN)
+                        .getSingleResult()
+                > 0;
     }
 
     public Optional<UserAccount> byEmail(String email) {

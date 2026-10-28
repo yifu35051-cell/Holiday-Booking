@@ -1,73 +1,131 @@
-# frontend
+# Holiday Booking 前端
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 + TypeScript + Vue Router + Pinia + Vite，使用现有package-lock锁定依赖。面向顾客、员工、管理员的独立门户，实际数据来自Spring Boot，不内置演示订单或虚构统计。更新日期：2026-10-28。
 
-## Recommended IDE Setup
+## 运行与构建
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+整个项目一键运行及镜像交付见[交付指南](../docs/交付与演示数据.md)。项目根目录执行 `scripts/Start-System.ps1` 默认使用四服务Docker栈，浏览器访问8088；`-Mode Development` 则直接启动已有后端JAR与Vue热更新，访问5173。两个入口均不自动下载或构建；首次准备、修改代码后更新部署镜像见项目根README。以下npm命令用于单独开发前端。
 
-## Recommended Browser Setup
+Node要求遵循package.json：`^22.18.0 || >=24.12.0`。先按[后端README](../backend/README.md)启动MySQL、Mailpit和Java，然后在**frontend目录**执行：
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```powershell
+npm ci             # 仅首次或依赖锁文件变更时显式安装
+npm run dev        # 日常启动，不安装依赖或构建dist
 ```
 
-### Compile and Hot-Reload for Development
+打开 `http://localhost:5173`。Vite将 `/api` 原路径转发到 `http://127.0.0.1:8080`，浏览器请求同源，不需要配置CORS或禁用CSRF。后端使用其他端口时，将 `.env.example` 复制为 `.env.local` 修改BACKEND_URL，再重启Vite。该变量仅控制开发代理；不放入数据库密码、SMTP密码或管理员凭据。
 
-```sh
-npm run dev
+```powershell
+npm run build       # vue-tsc类型检查 + Vite产物，输出dist/
+npm run preview     # 本机4173预览构建结果，仍需运行后端
+npm run lint        # ESLint/Oxlint，可能自动修复代码
+npm run format      # Prettier格式化源码
 ```
 
-### Type-Check, Compile and Minify for Production
+Dockerfile使用多阶段构建，最终Nginx镜像仅含dist及nginx.conf，不包含Node依赖、源码或env文件。Nginx代理 `/api` 到后端，前端路径回退到index.html。Vite开发/预览仅供本机开发；正式HTTPS环境需同时配置后端SESSION_COOKIE_SECURE。
 
-```sh
-npm run build
+已删除Vue DevTools插件依赖及浮窗，显式关闭生产devtools和source map，禁止自动注入客户端环境变量。Docker的Nginx及本机预览带CSP等响应头；源码开发服务器仅绑定localhost。浏览器能查看下载的JS是正常机制，不应将数据库密码、SMTP凭据或支付私钥写入前端；隐藏菜单不替代后端鉴权。
+
+## 角色入口与会话
+
+| 入口              | 登录后空间  | 账户来源                                    |
+| ----------------- | ----------- | ------------------------------------------- |
+| `/login/customer` | `/customer` | 顾客入口自助注册，默认CUSTOMER              |
+| `/login/staff`    | `/staff`    | 管理员将注册账户设为STAFF                   |
+| `/login/admin`    | `/admin`    | 后端InitializeAdmin初始化，或已有管理员授权 |
+
+入口选择不授予角色。登录请求携带portalRole，后端先核验密码与真实角色，匹配才建立会话；不匹配显示错误，不进入工作台。前端还再次核验响应角色。已经登录时输入另一角色URL，只能返回自己工作台，不能切换身份。
+
+每个角色只显示自己的菜单；进入受保护路由时重新请求 `/auth/me`，不信任localStorage。401会结束当前前端状态并返回对应登录入口。Session Cookie由后端管理，写请求先读取CSRF，登录/退出后丢弃旧token。所有敏感接口仍由后端最终鉴权。
+
+**同一浏览器同一主机的标签页共享会话**，不能用三个普通标签页同时保持三个不同账户。三角色同时联调请使用不同浏览器配置文件/独立浏览器。切换身份先退出；前端不提供伪造角色或本地角色开关。
+
+## 功能与后端对应
+
+以下接口统一省略 `/api/v1` 前缀。员工/管理员门户不混入顾客预订及会员购买页面；可复用相同页面组件，但路由与菜单严格按角色授权。
+
+| 模块 / 页面        | 角色                 | 已接入接口与功能                                                                                                                            |
+| ------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 登录 / 注册 / 退出 | 各角色登录；顾客注册 | `/auth/csrf`、register、login、me、logout；错误入口拒绝、会话失效处理                                                                       |
+| 工作台             | 各角色               | 本人账户信息、邮箱未读数、角色内业务快捷入口，无假统计                                                                                      |
+| 探索客房           | 顾客                 | GET `/room-types`及详情、`/availability`；多房型入住选择；POST `/quotes`；逐晚价格、折扣、到期时间；POST `/bookings`                        |
+| 我的预订 / 详情    | 顾客                 | `/bookings`分页、状态/日期筛选、详情、分配客房、付款入口                                                                                    |
+| 取消 / 改订 / 退款 | 顾客                 | cancellation-quotes、amendment-quotes、cancellations、amendments、changes列表/详情、`/refunds/{id}/refresh`；先展示后端差额，用户确认后提交 |
+| 付款页             | 顾客                 | `/payment-orders/{id}`、attempts、refresh；收银台核对金额、支付密码授权、倒计时、取消本次交易；调用`/sandbox/payment-attempts/{id}/authorize`及cancel                         |
+| 会员权益           | 顾客                 | `/membership/plans`、me、purchases创建/列表/详情；付款入口、权益刷新、有效会员按原方案续期                                                  |
+| 我的邮箱           | 三角色               | `/mail/recipient`、messages、unread-count、详情、回复、read、visibility、retry；收件箱/发件箱/回收站、个人副本恢复                          |
+| 全站预订           | 员工、管理员         | `/admin/bookings`分页、状态/日期/顾客筛选和详情；只读订单，他人订单不能代取消/改订                                                          |
+| 客房与封房         | 员工、管理员         | 后台房型读取、`/admin/rooms`创建/查询/启停、blocks创建/查询、`/admin/room-blocks/{id}`释放；删除房间API与停用语义相同，界面统一为停用       |
+| 通知任务           | 员工、管理员         | `/admin/notifications`分页、失败信息、人工重试；UNKNOWN必须勾选重复风险确认                                                                 |
+| 房型与日期价       | 管理员               | `/admin/room-types`创建/更新/启停、rates设置；实体房在客房页维护                                                                            |
+| 会员方案           | 管理员               | `/admin/membership-plans`创建/停用；方案不原地修改，以保留历史权益快照                                                                      |
+| 账户与角色         | 管理员               | `/admin/users`分页、`/admin/users/{id}/role`；不允许修改自己角色                                                                            |
+| 全站邮件           | 管理员               | `/admin/mail/messages`分页、发件人/收件人/状态筛选、详情审计、失败重试；含系统通知、待投递与已删除副本                                      |
+| 支付异常 / 审计    | 管理员               | payment-exceptions列表与review、audit-logs分页；复核只保存意见，不假装完成退款                                                              |
+
+后端目前没有“入住登记/退房操作”“账户密码重置”“上传房型图片”等接口，前端没有伪造相应功能。房型卡片为纯CSS装饰，不代表真实客房照片。部署版同样使用mock付款页面；真实支付渠道界面另行接入。
+
+## 沙箱钱包与付款
+
+顾客的“沙箱钱包”和付款页共用钱包组件：首次验证项目登录密码并设置6位支付密码，零余额起步；模拟充值100/1000/10000元，再进入收银台授权扣款。支持修改支付密码、失败锁定提示、余额和分页资金流水。密码提交后清空，不存浏览器持久存储；创建支付请求不代表成功。取消/改订退款回到原钱包；模拟支付宝与模拟微信共用一份余额。详细输入输出和升级方法见[支付指南](../docs/支付与邮件部署.md#11-本次选择持久化离线钱包沙箱)。
+
+## 邮箱使用
+
+各角色在自己的“我的邮箱”中给任意已启用注册邮箱发信，不限制为配置里的示例地址。发信先返回READY，后台扫描SMTP接受后才进入对方收件箱；可点击刷新查看状态。打开正文不自动标已读，使用“标为已读”操作。
+
+删除只改变自己的收件/发件副本，回收站可恢复；对方与管理员仍保留可见记录。管理员“全站邮件”读取正文会写审计，但不改变对方已读状态。邮件纯文本显示，不渲染HTML。UNKNOWN重试需核验后确认可能重复投递。
+
+Mailpit的8025（开发版）/8026（部署版）页面是运维入口，能看到容器捕获邮件，不作为普通用户邮箱；用户界面不跳转到该页面。应用不会读取其他程序直接发进Mailpit的邮件，也不会自动向QQ/Gmail投递。具体配置见[邮件指南](../docs/支付与邮件部署.md)。
+
+## 源码分层
+
+```text
+src/
+├── api/             HTTP/CSRF/错误/幂等键、DTO类型、按业务分组的接口适配
+├── stores/auth.ts   真实账户状态与登录退出
+├── router/          独立门户、按角色校验、懒加载
+├── layouts/         按角色渲染的门户外壳，无跨角色菜单
+├── views/           auth、catalog、booking、payment、membership、mail、operations、admin
+├── components/      分页、请求反馈、入住表单、逐晚价格
+├── composables/     防重复操作、错误及成功状态
+├── shared/          金额/日期/状态展示
+└── assets/          响应式样式
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+不把业务请求堆入App.vue。页面使用具名操作函数；提交时禁用重复操作。幂等键在同一次页面命令重试时复用，改变输入才换键；网络错误不会自动重放写请求。刷新页面后先通过记录列表核对不确定操作。改入住条件会使旧报价从界面失效；提交价格始终由服务端核验。
 
-```sh
-npm run test:unit
-```
+## 测试与自行验收
 
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
+本轮未预先执行自动化测试或真实数据库浏览器流程。已完成类型检查、ESLint检查与生产构建；当前工具环境的Windows网络盘探测受限，构建验证使用跳过该可选探测的本地入口，项目标准命令仍为npm run build。编译成功不代表业务测试已通过。
 
-```sh
-# Install browsers for the first run
-npx playwright install
-
-# When testing on CI, must build the project first
-npm run build
-
-# Runs the end-to-end tests
+```powershell
+# frontend目录执行；均由你自行运行
+npm run test:unit -- --run
+npx playwright install chromium  # 首次安装浏览器
 npm run test:e2e
-# Runs the tests only on Chromium
-npm run test:e2e -- --project=chromium
-# Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
-# Runs the tests in debug mode
-npm run test:e2e -- --debug
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+| 测试                               | 输入 / 预期                                                                                                   | 结果位置                                   |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `src/api/__tests__/client.spec.ts` | CSRF响应csrf-123→POST携带正确header和幂等键；字符串大ID保持；网络失败不自动重发；403保留trace；相同输入复用键 | `results/frontend-unit/report.json`        |
+| `e2e/portals.spec.ts`              | 三角色登录→只显示自己的菜单；顾客登录管理员入口→拒绝；顾客手动输入/admin/users→返回/customer                  | `results/frontend-e2e/report/`、artifacts/ |
 
-```sh
-npm run lint
-```
+这些前端测试拦截HTTP协议，不连接真实数据库，不能替代Java权限测试和人工全流程验收。前端报告路径保存最近一次执行，Java原有历史报告保持不动。
+
+真实联调建议按顺序：
+
+1. 初始化管理员并导入演示数据；也可使用已有房型/实体房/会员方案。演示账户及初始场景见交付指南。
+2. 注册两个顾客账户，将其中一个通过管理员页面设为STAFF；分别验证正确/错误登录入口。
+3. 顾客查询未来日期、报价、创建预订、开通钱包并充值、创建支付尝试、输入支付密码授权扣款，回预订刷新应为CONFIRMED。
+4. 顾客购买会员并mock付款；刷新权益，再报价核对折扣。提前24小时以上的预订分别检查取消退款、改订补款/退款。
+5. 员工查看该预订、维护独立房间封房及释放、查看通知任务；验证没有账户/价格等管理员菜单。
+6. 顾客给员工发信，待SMTP接受后员工回复；检查未读/删除/恢复；管理员查全站正文，再查审计。
+7. 对无权限URL、未登录访问、过期报价、库存不足、错误收件邮箱和UNKNOWN重试分别核验提示。
+
+## 常见问题
+
+- 登录页提示连接失败：先确认Java在8080运行，再核对BACKEND_URL；不要将5173误写成后端目标。
+- 提示入口角色不匹配：由管理员核对真实角色，不能靠选择入口提权。
+- 403：可能是角色变化或CSRF过期；刷新/重新登录后重试，不关闭CSRF。
+- 发信后对方暂时看不到：检查JOBS_ENABLED、SMTP配置、任务状态和每日配额；READY不是投递成功。
+- 只有空列表：确认正在使用哪个运行栈、是否启用了演示导入，并检查后端日志中的LOCAL_DEMO_V1导入结果。Docker交付库与原开发库相互独立。

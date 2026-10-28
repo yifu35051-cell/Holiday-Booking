@@ -27,6 +27,9 @@ public class PaymentOrder extends BaseEntity {
     @Column(unique = true)
     private Long membershipPurchaseId;
 
+    @Column(unique = true)
+    private Long bookingChangeId;
+
     @Column(nullable = false, precision = 12, scale = 2)
     private BigDecimal amount;
 
@@ -57,6 +60,16 @@ public class PaymentOrder extends BaseEntity {
     public void succeed(long attempt) {
         status = Status.SUCCEEDED;
         successfulAttemptId = attempt;
+    }
+
+    public static PaymentOrder forChange(
+            long user, long change, BigDecimal amount, Instant expires) {
+        var order = new PaymentOrder();
+        order.userId = user;
+        order.bookingChangeId = change;
+        order.amount = amount;
+        order.expiresAt = expires;
+        return order;
     }
 
     public void expire() {

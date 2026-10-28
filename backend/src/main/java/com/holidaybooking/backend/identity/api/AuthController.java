@@ -1,7 +1,9 @@
 package com.holidaybooking.backend.identity.api;
 
 import com.holidaybooking.backend.identity.application.IdentityService;
+import com.holidaybooking.backend.identity.domain.UserAccount;
 import com.holidaybooking.backend.shared.api.ApiResponse;
+import com.holidaybooking.backend.shared.domain.DomainException;
 import jakarta.servlet.http.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
@@ -29,7 +31,10 @@ public class AuthController {
             @NotBlank @Size(min = 12, max = 72) String password,
             @NotBlank @Size(max = 80) String displayName) {}
 
-    public record Login(@NotBlank @Email String email, @NotBlank @Size(max = 72) String password) {}
+    public record Login(
+            @NotBlank @Email String email,
+            @NotBlank @Size(max = 72) String password,
+            UserAccount.Role portalRole) {}
 
     public record CsrfView(String headerName, String token) {}
 
@@ -54,6 +59,19 @@ public class AuthController {
                 authentication.authenticate(
                         UsernamePasswordAuthenticationToken.unauthenticated(
                                 input.email(), input.password()));
+        // 门户角色只用于校验，绝不赋权；旧API客户端可不传此字段。
+        if (input.portalRole() != null
+                && auth.getAuthorities().stream()
+                        .noneMatch(
+                                authority ->
+                                        authority
+                                                .getAuthority()
+                                                .equals("ROLE_" + input.portalRole()))) {
+            throw new DomainException(
+                    DomainException.Kind.FORBIDDEN,
+                    "PORTAL_ROLE_MISMATCH",
+                    "账户角色与当前登录入口不符，请使用对应入口");
+        }
         sessions.onAuthentication(auth, request, response);
         var context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(auth);

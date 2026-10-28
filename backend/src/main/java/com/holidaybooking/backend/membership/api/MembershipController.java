@@ -2,6 +2,7 @@ package com.holidaybooking.backend.membership.api;
 
 import com.holidaybooking.backend.membership.application.MembershipService;
 import com.holidaybooking.backend.shared.api.ApiResponse;
+import com.holidaybooking.backend.shared.application.PageResult;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import java.util.List;
@@ -42,5 +43,13 @@ public class MembershipController {
     public ApiResponse<MembershipService.PurchaseView> get(
             Authentication auth, @PathVariable long id) {
         return ApiResponse.of(memberships.purchase(Long.parseLong(auth.getName()), id));
+    }
+
+    @GetMapping("/purchases")
+    public ApiResponse<PageResult<MembershipService.PurchaseView>> purchases(
+            Authentication auth,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.of(memberships.purchases(Long.parseLong(auth.getName()), page, size));
     }
 }

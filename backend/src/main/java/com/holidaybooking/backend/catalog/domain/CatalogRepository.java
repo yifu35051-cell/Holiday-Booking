@@ -24,6 +24,8 @@ public interface CatalogRepository {
 
     List<Long> available(long typeId, LocalDate start, LocalDate end);
 
+    List<Long> availableForChange(long typeId, LocalDate start, LocalDate end, long bookingId);
+
     boolean hasFutureOccupancy(long roomId, LocalDate today);
 
     void hold(long roomId, List<LocalDate> dates, long bookingId);

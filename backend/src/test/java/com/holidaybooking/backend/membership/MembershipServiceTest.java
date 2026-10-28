@@ -13,6 +13,24 @@ import org.junit.jupiter.api.*;
 class MembershipServiceTest extends BusinessTestSupport {
     @Test
     @CaseSpec(
+            input = "客户购买99元/30天/0.85方案；本人和另一个客户分页查询purchases",
+            expected = "本人total=1，返回同购买单和支付单；另一客户total=0，不泄漏其他账户记录")
+    void purchaseHistoryIsScopedToTheCurrentUser() {
+        long owner = user();
+        var plan =
+                memberships.createPlan(
+                        owner, "History plan", new BigDecimal("99"), new BigDecimal("0.85"), 30);
+        var purchase = memberships.purchase(owner, Long.parseLong(plan.id()), "history-key");
+        var history = memberships.purchases(owner, 0, 20);
+        assertThat(actual(history.total())).isEqualTo(1);
+        assertThat(actual(history.items().getFirst().id())).isEqualTo(purchase.id());
+        assertThat(actual(history.items().getFirst().paymentOrderId()))
+                .isEqualTo(purchase.paymentOrderId());
+        assertThat(actual(memberships.purchases(user(), 0, 20).total())).isZero();
+    }
+
+    @Test
+    @CaseSpec(
             input = "99元、0.85折扣系数、30天方案；新用户重复提交同一购买键",
             expected = "购买单 PENDING_PAYMENT，保留99.00/0.8500/30快照；相同键返回同ID；会员仍未激活")
     void unpaidPurchaseIsIdempotentAndDoesNotGrantBenefits() {

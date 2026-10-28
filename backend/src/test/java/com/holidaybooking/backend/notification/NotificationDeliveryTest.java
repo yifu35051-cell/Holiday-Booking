@@ -9,8 +9,8 @@ import com.holidaybooking.backend.booking.application.BookingService;
 import com.holidaybooking.backend.booking.domain.Stay;
 import com.holidaybooking.backend.catalog.application.CatalogService;
 import com.holidaybooking.backend.identity.application.IdentityService;
+import com.holidaybooking.backend.mail.domain.EmailSender;
 import com.holidaybooking.backend.notification.application.NotificationService;
-import com.holidaybooking.backend.notification.domain.EmailSender;
 import com.holidaybooking.backend.payment.application.PaymentService;
 import com.holidaybooking.backend.shared.domain.DomainException;
 import com.holidaybooking.backend.shared.infrastructure.JdbcTime;
@@ -41,6 +41,7 @@ class NotificationDeliveryTest extends MySqlTestSupport {
     @Autowired private NotificationService notifications;
     @Autowired private JdbcClient jdbc;
     @Autowired private TestClockConfig.MutableClock clock;
+    @Autowired private com.holidaybooking.backend.shared.config.BookingProperties settings;
     private long userId;
     private long taskId;
     private long bookingId;
@@ -103,21 +104,21 @@ class NotificationDeliveryTest extends MySqlTestSupport {
     @Test
     @CaseSpec(input = "发送器连续RETRY；推进1、5、30分钟", expected = "立即重复调度不重发；总4次后FAILED")
     void retriesUseBoundedBackoffAndStopAfterFourAttempts() {
-        when(sender.send(any()))
+        when(sender.sendMessage(any()))
                 .thenReturn(
                         new EmailSender.Result(
                                 EmailSender.Outcome.RETRY, "Temporary authentication failure"));
         notifications.dispatch();
         assertThat(actual(state())).isEqualTo("RETRY");
         notifications.dispatch();
-        verify(sender, times(1)).send(any());
+        verify(sender, times(1)).sendMessage(any());
 
         for (int minutes : new int[] {1, 5, 30}) {
             clock.advance(Duration.ofMinutes(minutes));
             notifications.dispatch();
         }
         assertThat(actual(state())).isEqualTo("FAILED");
-        verify(sender, times(4)).send(any());
+        verify(sender, times(4)).sendMessage(any());
     }
 
     @Test
@@ -125,7 +126,7 @@ class NotificationDeliveryTest extends MySqlTestSupport {
             input = "发送结果UNKNOWN，推进1小时，人工分别不确认/确认重试",
             expected = "UNKNOWN不自动重发；未确认重试拒绝；确认重试后可SENT")
     void uncertainDeliveryRequiresExplicitAcknowledgementBeforeRetry() {
-        when(sender.send(any()))
+        when(sender.sendMessage(any()))
                 .thenReturn(
                         new EmailSender.Result(
                                 EmailSender.Outcome.UNKNOWN, "SMTP outcome unknown"));
@@ -133,12 +134,12 @@ class NotificationDeliveryTest extends MySqlTestSupport {
         assertThat(actual(state())).isEqualTo("UNKNOWN");
         clock.advance(Duration.ofHours(1));
         notifications.dispatch();
-        verify(sender, times(1)).send(any());
+        verify(sender, times(1)).sendMessage(any());
         assertThatThrownBy(expectFailure(() -> notifications.retry(userId, taskId, false)))
                 .isInstanceOf(DomainException.class);
 
         notifications.retry(userId, taskId, true);
-        when(sender.send(any()))
+        when(sender.sendMessage(any()))
                 .thenReturn(new EmailSender.Result(EmailSender.Outcome.SENT, "SMTP accepted"));
         notifications.dispatch();
         assertThat(actual(state())).isEqualTo("SENT");
@@ -197,6 +198,92 @@ class NotificationDeliveryTest extends MySqlTestSupport {
     }
 
     @Autowired private org.springframework.transaction.support.TransactionTemplate transactions;
+
+    @Test
+    @CaseSpec(
+            input = "reminderDays=[3,1,3]；入住2026-11-10；创建时间2026-10-22T00:00:00Z",
+            expected = "只生成CONFIRMATION、REMINDER_D3、REMINDER_D1各一项；提醒分别在11月7日和9日北京时间09:00")
+    void schedulesDistinctD3AndD1AtHotelLocalTime() {
+        var previousDays = settings.getReminderDays();
+        try {
+            settings.setReminderDays(List.of(3, 1, 3));
+            rescheduleCurrentBooking();
+            var rows =
+                    jdbc.sql(
+                                    "select task_type,due_at,state from notification_task where booking_id=? order by due_at,task_type")
+                            .param(bookingId)
+                            .query(
+                                    (rs, row) ->
+                                            rs.getString("task_type")
+                                                    + "|"
+                                                    + JdbcTime.read(rs, "due_at")
+                                                    + "|"
+                                                    + rs.getString("state"))
+                            .list();
+            assertThat(actual(rows))
+                    .containsExactly(
+                            "CONFIRMATION|2026-10-22T00:00:00Z|READY",
+                            "REMINDER_D3|2026-11-07T01:00:00Z|READY",
+                            "REMINDER_D1|2026-11-09T01:00:00Z|READY");
+        } finally {
+            settings.setReminderDays(previousDays);
+        }
+    }
+
+    @Test
+    @CaseSpec(
+            input = "reminderDays=[3,1]；入住2026-11-10；分别在11月9日09:00与09:00:01北京时间创建提醒",
+            expected = "09:00时D3=SKIPPED且D1=READY；09:00:01时两项提醒均SKIPPED；确认邮件仍READY")
+    void missedRemindersAreSkippedButExactDueTimeRemainsEligible() {
+        var previousDays = settings.getReminderDays();
+        try {
+            settings.setReminderDays(List.of(3, 1));
+            clock.advance(Duration.between(clock.instant(), Instant.parse("2026-11-09T01:00:00Z")));
+            rescheduleCurrentBooking();
+            assertThat(actual(reminderStates()))
+                    .containsExactly("REMINDER_D1|READY", "REMINDER_D3|SKIPPED");
+            clock.advance(Duration.ofSeconds(1));
+            rescheduleCurrentBooking();
+            assertThat(actual(reminderStates()))
+                    .containsExactly("REMINDER_D1|SKIPPED", "REMINDER_D3|SKIPPED");
+            assertThat(
+                            actual(
+                                    jdbc.sql(
+                                                    "select state from notification_task where booking_id=? and task_type='CONFIRMATION'")
+                                            .param(bookingId)
+                                            .query(String.class)
+                                            .single()))
+                    .isEqualTo("READY");
+        } finally {
+            settings.setReminderDays(previousDays);
+        }
+    }
+
+    private List<String> reminderStates() {
+        return jdbc.sql(
+                        "select task_type,state from notification_task where booking_id=? and task_type like 'REMINDER_%' order by task_type")
+                .param(bookingId)
+                .query((rs, row) -> rs.getString(1) + "|" + rs.getString(2))
+                .list();
+    }
+
+    private void rescheduleCurrentBooking() {
+        // 仅替换本用例的任务，保留原预订版本和真实外键。
+        transactions.executeWithoutResult(
+                status -> {
+                    jdbc.sql("delete from notification_task where booking_id=?")
+                            .param(bookingId)
+                            .update();
+                    notifications.schedule(
+                            bookingId,
+                            1,
+                            "guest@example.com",
+                            "Guest",
+                            LocalDate.of(2026, 11, 10),
+                            LocalDate.of(2026, 11, 12),
+                            new BigDecimal("200"));
+                });
+    }
 
     @Test
     @CaseSpec(

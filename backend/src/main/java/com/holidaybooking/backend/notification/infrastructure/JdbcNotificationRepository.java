@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class JdbcNotificationRepository implements NotificationRepository {
     private final JdbcClient jdbc;
+    private final Clock clock;
 
     private Task map(ResultSet rs, int row) throws SQLException {
         return new Task(
@@ -44,8 +45,8 @@ public class JdbcNotificationRepository implements NotificationRepository {
             String state) {
         jdbc.sql(
                         """
-                        insert into notification_task(booking_id,revision_number,task_type,recipient,subject,body,due_at,send_before,state,attempts)
-                        values(?,?,?,?,?,?,?,?,?,0)
+                        insert into notification_task(booking_id,revision_number,task_type,recipient,subject,body,due_at,send_before,state,attempts,created_at)
+                        values(?,?,?,?,?,?,?,?,?,0,?)
                         """)
                 .params(
                         booking,
@@ -56,7 +57,8 @@ public class JdbcNotificationRepository implements NotificationRepository {
                         body,
                         JdbcTime.write(due),
                         sendBefore == null ? null : JdbcTime.write(sendBefore),
-                        state)
+                        state,
+                        JdbcTime.write(clock.instant()))
                 .update();
     }
 
@@ -129,9 +131,17 @@ public class JdbcNotificationRepository implements NotificationRepository {
     public void complete(Task task, String state, String detail, Instant nextAttempt) {
         jdbc.sql(
                         "update notification_task set"
-                                + " state=?,last_error=?,due_at=?,lease_token=null,lease_until=null"
+                                + " state=?,last_error=?,due_at=?,delivered_at=?,lease_token=null,lease_until=null"
                                 + " where id=? and state='SENDING' and lease_token=?")
-                .params(state, detail, JdbcTime.write(nextAttempt), task.id(), task.leaseToken())
+                .params(
+                        state,
+                        detail,
+                        JdbcTime.write(nextAttempt),
+                        state.equals("SENT") || state.equals("SIMULATED")
+                                ? JdbcTime.write(nextAttempt)
+                                : null,
+                        task.id(),
+                        task.leaseToken())
                 .update();
     }
 

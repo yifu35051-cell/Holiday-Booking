@@ -64,7 +64,17 @@ public class BookingService {
     /** 报价只保存价格与权益快照，不锁定库存；创建预订时必须重新校验可用性。 */
     @Transactional
     public QuoteView quote(long user, Stay stay, List<Selection> selections) {
+        return quoteForChange(user, stay, selections, null);
+    }
+
+    /** 改订报价允许使用本单已占房晚；最终提交仍需在库存锁下重新分配。 */
+    @Transactional
+    public QuoteView quoteForChange(
+            long user, Stay stay, List<Selection> selections, Long bookingId) {
         users.lock(user);
+        if (bookingId != null && bookings.booking(bookingId).getUserId() != user) {
+            throw DomainException.missing();
+        }
         catalogService.validate(stay);
         if (selections == null
                 || selections.isEmpty()
@@ -94,8 +104,12 @@ public class BookingService {
                     || selection.guestsPerRoom() > type.getCapacity()) {
                 throw DomainException.invalid("CAPACITY", "房型不可订或每间人数超出容量");
             }
-            if (catalog.available(type.getId(), stay.checkIn(), stay.checkOut()).size()
-                    < selection.rooms()) {
+            var available =
+                    bookingId == null
+                            ? catalog.available(type.getId(), stay.checkIn(), stay.checkOut())
+                            : catalog.availableForChange(
+                                    type.getId(), stay.checkIn(), stay.checkOut(), bookingId);
+            if (available.size() < selection.rooms()) {
                 throw DomainException.conflict("NO_AVAILABILITY", "所选日期没有足够的连续可住房间");
             }
             var rates = catalog.rates(type.getId(), stay.checkIn(), stay.checkOut());

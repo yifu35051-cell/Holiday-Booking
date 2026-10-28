@@ -4,6 +4,7 @@ import com.holidaybooking.backend.identity.domain.IdentityRepository;
 import com.holidaybooking.backend.membership.domain.*;
 import com.holidaybooking.backend.payment.application.PaymentLedger;
 import com.holidaybooking.backend.payment.domain.PaymentRepository;
+import com.holidaybooking.backend.shared.application.PageResult;
 import com.holidaybooking.backend.shared.application.RequestFingerprint;
 import com.holidaybooking.backend.shared.config.BookingProperties;
 import com.holidaybooking.backend.shared.domain.*;
@@ -29,7 +30,8 @@ public class MembershipService {
     public record PlanView(
             String id, String name, String fee, String discountRatio, int durationDays) {}
 
-    public record MemberView(boolean active, String discountRatio, Instant validUntil) {}
+    public record MemberView(
+            boolean active, String discountRatio, Instant validUntil, String planId) {}
 
     public record PurchaseView(
             String id,
@@ -65,8 +67,9 @@ public class MembershipService {
                                         membership.active(clock.instant())
                                                 ? membership.getDiscountRatio().toPlainString()
                                                 : "1.0000",
-                                        membership.getValidUntil()))
-                .orElse(new MemberView(false, "1.0000", null));
+                                        membership.getValidUntil(),
+                                        membership.getPlanId().toString()))
+                .orElse(new MemberView(false, "1.0000", null, null));
     }
 
     @Transactional(readOnly = true)
@@ -125,6 +128,16 @@ public class MembershipService {
                 purchase.getDurationDays(),
                 purchase.getExpiresAt(),
                 payments.forPurchase(purchase.getId()).getId().toString());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResult<PurchaseView> purchases(long user, int page, int size) {
+        int offset = PageResult.offset(page, size);
+        return new PageResult<>(
+                memberships.purchases(user, offset, size).stream().map(this::purchaseView).toList(),
+                page,
+                size,
+                memberships.countPurchases(user));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)

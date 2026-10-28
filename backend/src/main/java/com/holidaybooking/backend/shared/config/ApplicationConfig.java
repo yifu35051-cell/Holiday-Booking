@@ -40,6 +40,12 @@ public class ApplicationConfig {
                 throw new IllegalStateException(
                         "A positive email quota and MAIL_FROM for SMTP are required");
             }
+            if (properties.getReminderDays() == null
+                    || properties.getReminderDays().isEmpty()
+                    || properties.getReminderDays().stream()
+                            .anyMatch(day -> day == null || (day != 1 && day != 3))) {
+                throw new IllegalStateException("提醒天数只能配置1或3，且不能为空");
+            }
             if ("mock".equals(properties.getPaymentMode())
                     && !environment.acceptsProfiles(Profiles.of("local", "test"))) {
                 throw new IllegalStateException("模拟支付只能在local/test配置下启用");

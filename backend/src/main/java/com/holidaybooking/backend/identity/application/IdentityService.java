@@ -1,12 +1,14 @@
 package com.holidaybooking.backend.identity.application;
 
 import com.holidaybooking.backend.identity.domain.*;
+import com.holidaybooking.backend.shared.application.PageResult;
 import com.holidaybooking.backend.shared.config.BookingProperties;
 import com.holidaybooking.backend.shared.domain.*;
 import java.time.Clock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 /** 账户注册、管理员初始化及角色维护。公开注册始终创建 CUSTOMER。 */
 @Service
 @RequiredArgsConstructor
+@Order(0)
 public class IdentityService implements ApplicationRunner {
     private final IdentityRepository users;
     private final PasswordEncoder passwords;
@@ -22,6 +25,17 @@ public class IdentityService implements ApplicationRunner {
     private final Clock clock;
 
     public record UserView(String id, String email, String displayName, String role) {}
+
+    /** 管理员接口调用；响应不包含密码哈希。 */
+    @Transactional(readOnly = true)
+    public PageResult<UserView> list(int page, int size) {
+        int offset = PageResult.offset(page, size);
+        return new PageResult<>(
+                users.list(offset, size).stream().map(IdentityService::view).toList(),
+                page,
+                size,
+                users.count());
+    }
 
     public static UserView view(UserAccount user) {
         return new UserView(
@@ -89,6 +103,10 @@ public class IdentityService implements ApplicationRunner {
                         "Bootstrap email already belongs to a non-admin account");
             }
             return;
+        }
+        if (users.administratorExists()) {
+            throw new IllegalStateException(
+                    "An administrator already exists; clear bootstrap settings instead of provisioning another account");
         }
         UserAccount admin =
                 users.save(

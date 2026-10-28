@@ -5,6 +5,7 @@ import com.holidaybooking.backend.shared.domain.DomainException;
 import com.holidaybooking.backend.shared.infrastructure.JdbcTime;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.*;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Repository;
 public class JpaBookingRepository implements BookingRepository {
     @PersistenceContext private EntityManager entityManager;
     private final JdbcClient jdbc;
+    private final Clock clock;
 
     public BookingQuote quote(long id) {
         var quote = entityManager.find(BookingQuote.class, id);
@@ -52,12 +54,13 @@ public class JpaBookingRepository implements BookingRepository {
         jdbc.sql(
                         "insert into"
                                 + " booking_revision(booking_id,revision_number,discount_ratio,total_amount,created_at)"
-                                + " values(?,1,?,?,?)")
+                                + " values(?,?,?,?,?)")
                 .params(
                         booking.getId(),
+                        booking.getCurrentRevision(),
                         new BigDecimal(snapshot.discountRatio()),
                         snapshot.total(),
-                        JdbcTime.write(booking.getCreatedAt()))
+                        JdbcTime.write(clock.instant()))
                 .update(revisionKey, "id");
         long revision = Objects.requireNonNull(revisionKey.getKey()).longValue();
         for (var room : rooms) {

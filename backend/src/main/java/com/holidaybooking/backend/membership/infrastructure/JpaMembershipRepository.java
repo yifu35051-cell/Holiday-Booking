@@ -11,6 +11,25 @@ import org.springframework.stereotype.Repository;
 public class JpaMembershipRepository implements MembershipRepository {
     @PersistenceContext private EntityManager entityManager;
 
+    public List<MembershipPurchase> purchases(long user, int offset, int size) {
+        return entityManager
+                .createQuery(
+                        "from MembershipPurchase where userId=:user order by id desc",
+                        MembershipPurchase.class)
+                .setParameter("user", user)
+                .setFirstResult(offset)
+                .setMaxResults(size)
+                .getResultList();
+    }
+
+    public long countPurchases(long user) {
+        return entityManager
+                .createQuery(
+                        "select count(p) from MembershipPurchase p where userId=:user", Long.class)
+                .setParameter("user", user)
+                .getSingleResult();
+    }
+
     public List<MembershipPlan> plans() {
         return entityManager
                 .createQuery(

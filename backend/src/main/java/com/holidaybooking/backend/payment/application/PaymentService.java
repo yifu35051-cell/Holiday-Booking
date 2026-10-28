@@ -1,5 +1,6 @@
 package com.holidaybooking.backend.payment.application;
 
+import com.holidaybooking.backend.booking.application.BookingChangeService;
 import com.holidaybooking.backend.booking.application.BookingService;
 import com.holidaybooking.backend.identity.domain.IdentityRepository;
 import com.holidaybooking.backend.membership.application.MembershipService;
@@ -23,8 +24,10 @@ public class PaymentService {
     private final PaymentRepository payments;
     private final IdentityRepository users;
     private final BookingService bookings;
+    private final BookingChangeService changes;
     private final MembershipService memberships;
     private final PaymentGateway gateway;
+    private final SandboxWalletService wallet;
     private final OperationStore operations;
     private final TransactionTemplate tx;
     private final BookingProperties settings;
@@ -45,6 +48,7 @@ public class PaymentService {
             String amount,
             String currency,
             Instant expiresAt,
+            String provider,
             List<AttemptView> attempts) {}
 
     private record Work(
@@ -88,6 +92,7 @@ public class PaymentService {
                 order.getAmount().toPlainString(),
                 order.getCurrency(),
                 order.getExpiresAt(),
+                gateway.provider(),
                 payments.attempts(order.getId()).stream()
                         .map(
                                 attempt ->
@@ -166,6 +171,33 @@ public class PaymentService {
         return get(user, id);
     }
 
+    /** 取消前关闭所有在途尝试；已付款按正常路径落账，未知结果留给取消事务拒绝释放库存。 */
+    public void prepareCancellation(long user, long bookingId) {
+        var pending =
+                tx.execute(
+                        status -> {
+                            users.lock(user);
+                            var order = payments.forBooking(bookingId);
+                            owner(order, user);
+                            return payments.attempts(order.getId()).stream()
+                                    .filter(PaymentAttempt::unresolved)
+                                    .map(attempt -> work(order, attempt))
+                                    .toList();
+                        });
+        for (var item : Objects.requireNonNull(pending)) {
+            requireProvider(item);
+            PaymentGateway.Result result;
+            try {
+                result = gateway.close(item.command());
+                if (result.state() == PaymentGateway.State.UNKNOWN)
+                    result = gateway.query(item.command());
+            } catch (RuntimeException failure) {
+                result = unknown(item);
+            }
+            apply(item, result);
+        }
+    }
+
     public OrderView simulate(long user, long attemptId) {
         if (!gateway.provider().equals("MOCK")) {
             throw DomainException.missing();
@@ -181,6 +213,37 @@ public class PaymentService {
         gateway.simulate(Objects.requireNonNull(work).command());
         apply(work, gateway.query(work.command()));
         return get(user, work.order());
+    }
+
+    /** 浏览器沙箱支付必须通过独立密码与余额授权，不能直接调用内部数据装载入口。 */
+    public OrderView authorizeSandbox(long user, long attemptId, String pin) {
+        Work work = ownedAttempt(user, attemptId);
+        requireProvider(work);
+        wallet.pay(user, pin, work.command());
+        // Channel debit has committed. If business confirmation fails, refresh/jobs can recover it
+        // without a second debit, as with a real provider whose response was lost.
+        apply(work, gateway.query(work.command()));
+        return get(user, work.order());
+    }
+
+    /** 取消当前付款尝试，不取消预订；可在应付单到期前重新选择付款方式。 */
+    public OrderView cancelAttempt(long user, long attemptId) {
+        Work work = ownedAttempt(user, attemptId);
+        requireProvider(work);
+        if (!gateway.provider().equals("MOCK")) throw DomainException.missing();
+        apply(work, gateway.close(work.command()));
+        return get(user, work.order());
+    }
+
+    private Work ownedAttempt(long user, long attemptId) {
+        return Objects.requireNonNull(
+                tx.execute(
+                        status -> {
+                            var attempt = payments.attempt(attemptId);
+                            var order = payments.order(attempt.getPaymentOrderId());
+                            owner(order, user);
+                            return work(order, attempt);
+                        }));
     }
 
     /** 此入口只接受适配器验签后的结果；浏览器返回页不能用于确认支付。 */
@@ -228,7 +291,9 @@ public class PaymentService {
                             return;
                         }
                         order.succeed(attempt.getId());
-                        if (order.getBookingId() != null) {
+                        if (order.getBookingChangeId() != null) {
+                            changes.confirm(order.getBookingChangeId());
+                        } else if (order.getBookingId() != null) {
                             bookings.confirm(order.getBookingId(), result.paidAt());
                         } else {
                             memberships.activate(order.getMembershipPurchaseId());
@@ -306,7 +371,9 @@ public class PaymentService {
                             && payments.attempts(id).stream()
                                     .noneMatch(PaymentAttempt::unresolved)) {
                         order.expire();
-                        if (order.getBookingId() != null) {
+                        if (order.getBookingChangeId() != null) {
+                            changes.expire(order.getBookingChangeId());
+                        } else if (order.getBookingId() != null) {
                             bookings.expire(order.getBookingId());
                         } else {
                             memberships.expire(order.getMembershipPurchaseId());
