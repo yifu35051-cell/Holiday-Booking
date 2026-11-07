@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Start Docker MySQL and the Spring Boot backend using one local config file.
@@ -29,6 +29,7 @@ function Read-LocalConfiguration {
     $allowedKeys = @(
         'MYSQL_ROOT_PASSWORD', 'MYSQL_PASSWORD', 'MYSQL_PORT',
         'SERVER_PORT', 'BOOTSTRAP_ADMIN_EMAIL', 'BOOTSTRAP_ADMIN_PASSWORD',
+        'WIREMOCK_BASE_URL', 'WIREMOCK_PORT', 'WIREMOCK_CALLBACK_SECRET', 'TRUSTED_EDGE_SECRET',
         'PAYMENT_MODE', 'EMAIL_MODE', 'JOBS_ENABLED', 'MAIL_HEALTH_ENABLED',
         'ALIPAY_APP_ID', 'ALIPAY_PRIVATE_KEY', 'ALIPAY_PUBLIC_KEY', 'ALIPAY_SELLER_ID', 'ALIPAY_NOTIFY_URL',
         'MAIL_HOST', 'MAIL_PORT', 'MAIL_USERNAME', 'MAIL_PASSWORD', 'MAIL_FROM',
@@ -41,6 +42,7 @@ function Read-LocalConfiguration {
         SERVER_PORT = '8080'
         BOOTSTRAP_ADMIN_EMAIL = ''
         BOOTSTRAP_ADMIN_PASSWORD = ''
+        WIREMOCK_BASE_URL = 'http://127.0.0.1:9090'; WIREMOCK_PORT = '9090'; WIREMOCK_CALLBACK_SECRET = ''; TRUSTED_EDGE_SECRET = ''
         PAYMENT_MODE = 'disabled'
         EMAIL_MODE = 'disabled'
         JOBS_ENABLED = 'false'
@@ -95,7 +97,7 @@ function Read-LocalConfiguration {
             throw "Replace the example value for $key in the local file."
         }
     }
-    foreach ($key in @('MYSQL_PORT', 'SERVER_PORT', 'MAIL_PORT', 'MAILPIT_PORT', 'MAILPIT_WEB_PORT')) {
+    foreach ($key in @('MYSQL_PORT', 'SERVER_PORT', 'WIREMOCK_PORT', 'MAIL_PORT', 'MAILPIT_PORT', 'MAILPIT_WEB_PORT')) {
         $port = 0
         if (-not [int]::TryParse($config[$key], [ref]$port) -or $port -lt 1 -or $port -gt 65535) {
             throw "$key must be an integer from 1 to 65535."
@@ -109,22 +111,26 @@ function Read-LocalConfiguration {
     foreach ($key in @('JOBS_ENABLED', 'MAIL_HEALTH_ENABLED', 'MAIL_SMTP_AUTH', 'MAIL_STARTTLS', 'MAIL_SSL_ENABLE', 'API_DOCS_ENABLED', 'SESSION_COOKIE_SECURE', 'MAILPIT_ENABLED')) {
         if ($config[$key] -cnotin @('true', 'false')) { throw "$key must be true or false." }
     }
-    if ($config.PAYMENT_MODE -cnotin @('disabled', 'mock', 'alipay-sandbox')) { throw 'Unsupported PAYMENT_MODE.' }
+    if ($config.PAYMENT_MODE -cnotin @('disabled', 'mock', 'wiremock', 'alipay-sandbox')) { throw 'Unsupported PAYMENT_MODE.' }
+    if ($config.PAYMENT_MODE -eq 'wiremock') {
+        $wireUri = $null
+        if (-not [Uri]::TryCreate($config.WIREMOCK_BASE_URL, [UriKind]::Absolute, [ref]$wireUri) -or
+            $wireUri.Scheme -ne 'http' -or $wireUri.Host -notin @('127.0.0.1', 'localhost') -or
+            $wireUri.Port -ne [int]$config.WIREMOCK_PORT -or $wireUri.AbsolutePath -ne '/') {
+            throw 'Development WIREMOCK_BASE_URL must be a loopback HTTP origin matching WIREMOCK_PORT.'
+        }
+        if (@(@($config.MYSQL_PORT, $config.SERVER_PORT, $config.WIREMOCK_PORT) | Select-Object -Unique).Count -ne 3) {
+            throw 'MySQL, backend and WireMock ports must be different.'
+        }
+        if ($config.WIREMOCK_CALLBACK_SECRET.Length -lt 32 -or $config.WIREMOCK_CALLBACK_SECRET -like 'REPLACE_*') { throw 'Set WIREMOCK_CALLBACK_SECRET to a random secret of at least 32 characters.' }
+    }
     if ($config.EMAIL_MODE -cnotin @('disabled', 'log', 'smtp')) { throw 'Unsupported EMAIL_MODE.' }
     if ($config.REMINDER_DAYS -notmatch '^(1|3|3,1|1,3)$') { throw "REMINDER_DAYS must be '1', '3', '3,1' or '1,3'." }
     $dailyLimit = 0
     if (-not [int]::TryParse($config.EMAIL_DAILY_LIMIT, [ref]$dailyLimit) -or $dailyLimit -lt 1) { throw 'EMAIL_DAILY_LIMIT must be a positive integer.' }
     if ($config.MAIL_STARTTLS -eq 'true' -and $config.MAIL_SSL_ENABLE -eq 'true') { throw 'Choose STARTTLS or implicit SSL, not both.' }
     if ($config.MAILPIT_ENABLED -eq 'true') {
-        if ($config.MAIL_HOST -notin @('localhost', '127.0.0.1') -or $config.MAIL_PORT -ne $config.MAILPIT_PORT) {
-            throw 'Local Mailpit requires MAIL_HOST=127.0.0.1 (or localhost) and MAIL_PORT=MAILPIT_PORT.'
-        }
-        if ($config.MAIL_SMTP_AUTH -ne 'false' -or $config.MAIL_STARTTLS -ne 'false' -or $config.MAIL_SSL_ENABLE -ne 'false') {
-            throw 'The supplied local Mailpit service uses SMTP without authentication or TLS.'
-        }
-        if (@(@($config.MYSQL_PORT, $config.SERVER_PORT, $config.MAILPIT_PORT, $config.MAILPIT_WEB_PORT) | Select-Object -Unique).Count -ne 4) {
-            throw 'MySQL, HTTP, Mailpit SMTP and Mailpit web ports must be distinct.'
-        }
+        throw 'Mailpit is retired from this runtime. Set MAILPIT_ENABLED=false and configure DirectMail.'
     }
     $required = @()
     if ($config.PAYMENT_MODE -eq 'alipay-sandbox') {
@@ -258,49 +264,6 @@ function Invoke-BackendJava {
     }
 }
 
-function Start-LocalMailpit {
-    param([string]$ConfigPath, [hashtable]$Config)
-    # A pre-existing manual container belongs to the user: reuse it, never delete
-    # or recreate it to make Compose take ownership.
-    $existing = Invoke-CapturedCommand 'docker' @('inspect', 'holiday-mailpit', '--format', '{{json .Config.Labels}}')
-    $managed = $false
-    if ($existing.Code -eq 0) {
-        $labels = $existing.Text | ConvertFrom-Json
-        $managed = $null -ne $labels -and $labels.'com.docker.compose.project' -eq 'holiday-booking' -and $labels.'com.docker.compose.service' -eq 'mailpit'
-    }
-    if ($existing.Code -eq 0 -and -not $managed) {
-        $started = Invoke-CapturedCommand 'docker' @('start', 'holiday-mailpit')
-        if ($started.Code -ne 0) { throw 'Existing holiday-mailpit could not start; inspect its Docker logs.' }
-        foreach ($binding in @(@('1025/tcp', $Config.MAILPIT_PORT), @('8025/tcp', $Config.MAILPIT_WEB_PORT))) {
-            $mapped = Invoke-CapturedCommand 'docker' @('port', 'holiday-mailpit', $binding[0])
-            if ($mapped.Code -ne 0 -or $mapped.Text -notmatch (':' + [regex]::Escape($binding[1]) + '(\r?\n|$)')) {
-                throw 'Existing holiday-mailpit port mapping differs from the file; adjust the file or manage the container manually. It has not been deleted.'
-            }
-        }
-        Write-Host 'Reusing existing holiday-mailpit; its storage and Compose ownership are unchanged.'
-    } else {
-        Invoke-DatabaseCompose $ConfigPath @('up', '-d', '--no-build', '--pull', 'never', '--wait', '--wait-timeout', '60', 'mailpit')
-    }
-    # Verify the SMTP greeting rather than treating a running container as ready.
-    $deadline = [DateTime]::UtcNow.AddSeconds(30)
-    do {
-        $client = New-Object Net.Sockets.TcpClient
-        try {
-            $connection = $client.ConnectAsync('127.0.0.1', [int]$Config.MAILPIT_PORT)
-            if (-not $connection.Wait(2000)) { throw 'SMTP connection timed out' }
-            $stream = $client.GetStream()
-            $stream.ReadTimeout = 2000
-            $reader = New-Object IO.StreamReader($stream)
-            if ($reader.ReadLine() -notmatch '^220[ -]') { throw 'Invalid SMTP greeting' }
-            Write-Host "Mailpit ready; web UI: http://localhost:$($Config.MAILPIT_WEB_PORT)"
-            return
-        } catch {
-            if ([DateTime]::UtcNow -ge $deadline) { throw 'Mailpit SMTP did not become ready; inspect docker logs holiday-mailpit.' }
-        } finally { $client.Dispose() }
-        Start-Sleep -Seconds 1
-    } while ($true)
-}
-
 function Start-LocalBackend {
     param([string]$Path, [switch]$ValidateOnly, [switch]$EnableAdminInitialization,
           [switch]$EnableDemoData, [switch]$ImportOnly, [switch]$DatabaseAlreadyRunning)
@@ -309,7 +272,7 @@ function Start-LocalBackend {
     $config = Read-LocalConfiguration $Path -EnableAdminInitialization:$EnableAdminInitialization
     $configPath = (Resolve-Path -LiteralPath $Path).Path
     Assert-LocalTools -DatabaseAlreadyRunning:$DatabaseAlreadyRunning
-    if (($EnableDemoData -or $ImportOnly) -and $config.PAYMENT_MODE -ne 'mock') {
+    if (($EnableDemoData -or $ImportOnly) -and $config.PAYMENT_MODE -notin @('mock', 'wiremock')) {
         throw 'Demo data requires PAYMENT_MODE=mock in the local config.'
     }
 
@@ -338,7 +301,12 @@ function Start-LocalBackend {
     foreach ($key in $config.Keys) {
         if (-not $environment.ContainsKey($key)) { $environment[$key] = $config[$key] }
     }
+    if ($EnableDemoData -and -not $ImportOnly) {
+        throw 'Use -SeedOnly as a separate preparation action, then start normally; live DirectMail must not dispatch fixture mail.'
+    }
     if ($ImportOnly) {
+        $environment.PAYMENT_MODE = 'mock'
+        $environment.EMAIL_MODE = 'log'
         $environment.SERVER_PORT = '0'
         $environment.JOBS_ENABLED = 'false'
     }
@@ -364,7 +332,9 @@ function Start-LocalBackend {
             Wait-DockerEngine
             Write-Host '[3/4] Starting MySQL and waiting for its health check...'
             Invoke-DatabaseCompose $configPath @('up', '-d', '--no-build', '--pull', 'never', '--wait', '--wait-timeout', '180', 'mysql')
-            if ($config.MAILPIT_ENABLED -eq 'true') { Start-LocalMailpit $configPath $config }
+            if ($config.PAYMENT_MODE -eq 'wiremock' -and -not $ImportOnly) {
+                Invoke-DatabaseCompose $configPath @('up', '-d', '--no-build', '--pull', 'never', 'wiremock')
+            }
         }
 
         # Do not confuse a failed second launch with the first backend still running.

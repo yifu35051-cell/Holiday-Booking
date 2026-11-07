@@ -1,9 +1,9 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Start installed Docker images (default) or the prepared development environment.
 .DESCRIPTION
-    Docker mode publishes only Nginx and the loopback Mailpit UI. Development mode
+    Docker mode publishes only the Nginx loopback web port. Development mode
     supervises its own Java/Vite processes; Ctrl+C stops those children only.
 #>
 [CmdletBinding()]
@@ -41,7 +41,7 @@ function Get-MissingImages([string[]]$ComposeArguments) {
     if ($resolved.Code -ne 0) { throw 'Cannot resolve Docker configuration.' }
     $services = ($resolved.Text | ConvertFrom-Json).services
     $missing = @()
-    foreach ($name in @('mysql', 'mailpit', 'backend', 'frontend')) {
+    foreach ($name in @('mysql', 'wiremock', 'backend', 'frontend')) {
         $imageName = $services.$name.image
         if (-not $imageName) { throw "No image configured for $name." }
         $inspection = Invoke-DockerInspection @('image', 'inspect', '--format', '{{.Id}}', $imageName)
@@ -115,7 +115,7 @@ try {
                 if ($applicationServices.Count -gt 0 -and -not (Test-Path -LiteralPath $buildOverlay)) {
                     throw 'This delivery package has no source build configuration. Run docker load --input images.tar first.'
                 }
-                foreach ($entry in @($missing | Where-Object { $_.Service -in @('mysql', 'mailpit') })) {
+                foreach ($entry in @($missing | Where-Object { $_.Service -in @('mysql', 'wiremock') })) {
                     Write-Host "Preparing missing service image: $($entry.Image)"
                     & docker pull $entry.Image
                     if ($LASTEXITCODE -ne 0) { throw "Image preparation failed: $($entry.Image)" }
@@ -136,19 +136,18 @@ try {
             & docker @composeArgs @startArgs
             if ($LASTEXITCODE -ne 0) { throw 'System startup failed. Missing images must be built or loaded once using README setup commands; startup never builds/pulls. Otherwise inspect Compose logs. Existing data is retained.' }
             Write-Host 'System ready. Default URL: http://localhost:8088 (WEB_PORT in config/deployment.env).'
-            Write-Host 'Mailpit UI: http://localhost:8026 (MAILPIT_WEB_PORT). See README for credentials and stop commands.'
+            Write-Host 'SMTP: configured DirectMail. WireMock is internal; see README for diagnostics.'
         } finally { $env:DEMO_DATA_ENABLED = $previousDemo }
         return
     }
 
     if ($PrepareImages) { throw '-PrepareImages applies to Docker mode only. Development runs Java/Vue on the host.' }
     if ($ImagesOnly) { throw '-ImagesOnly applies to Docker mode only.' }
-    Write-Host 'Mode: Development (5173). Reuse Docker MySQL/Mailpit; run Java/Vue on the host. No application images required.'
+    Write-Host 'Mode: Development (5173). Reuse Docker MySQL/WireMock; run Java/Vue on the host. No application images required.'
     . (Join-Path $PSScriptRoot 'Start-Backend.ps1') -ConfigFile $ConfigFile -InitializeAdmin:$InitializeAdmin
     if (-not $ConfigFile) { $ConfigFile = Join-Path $projectRoot 'config/development.env' }
     $configPath = (Resolve-Path -LiteralPath $ConfigFile).Path
     $config = Read-LocalConfiguration $configPath -EnableAdminInitialization:$InitializeAdmin
-    if (-not $SkipDemoData -and $config.PAYMENT_MODE -ne 'mock') { throw 'Demo import requires PAYMENT_MODE=mock; alternatively use -SkipDemoData.' }
     Assert-FreePort ([int]$config.SERVER_PORT)
     Assert-FreePort $FrontendPort
     if ([int]$config.SERVER_PORT -eq $FrontendPort) { throw 'Backend and frontend ports must be different.' }
@@ -174,11 +173,11 @@ try {
     $previousTarget = $env:BACKEND_URL
     try {
         $backendArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"' + (Join-Path $PSScriptRoot 'Start-Backend.ps1') + '"'), '-ConfigFile', ('"' + $configPath + '"'))
-        if (-not $SkipDemoData) { $backendArgs += '-SeedDemoData' }
+        # Seed data is now a separate explicit action; daily startup must not send demo mail.
         if ($InitializeAdmin) { $backendArgs += '-InitializeAdmin' }
         $backendProcess = Start-Process -FilePath 'powershell.exe' -ArgumentList $backendArgs -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru `
             -RedirectStandardOutput (Join-Path $logRoot 'backend.log') -RedirectStandardError (Join-Path $logRoot 'backend-error.log')
-        Wait-HttpService "http://127.0.0.1:$($config.SERVER_PORT)/actuator/health/readiness" $backendProcess 'backend and demo import'
+        Wait-HttpService "http://127.0.0.1:$($config.SERVER_PORT)/actuator/health/readiness" $backendProcess 'backend'
         $env:BACKEND_URL = "http://127.0.0.1:$($config.SERVER_PORT)"
         $frontendProcess = Start-Process -FilePath (Get-Command node.exe).Source `
             -ArgumentList @('node_modules/vite/bin/vite.js', '--host', 'localhost', '--port', "$FrontendPort") `
@@ -186,7 +185,7 @@ try {
             -RedirectStandardOutput (Join-Path $logRoot 'frontend.log') -RedirectStandardError (Join-Path $logRoot 'frontend-error.log')
         Wait-HttpService "http://localhost:$FrontendPort" $frontendProcess 'frontend'
         Write-Host "System ready: http://localhost:$FrontendPort"
-        Write-Host 'Demo passwords: .local/demo-accounts.properties. Keep this terminal open; Ctrl+C stops Java/Vue and retains Docker data.'
+        Write-Host 'Keep this terminal open; Ctrl+C stops Java/Vue and retains Docker data. Demo import is a separate -SeedOnly preparation action.'
         while (-not $backendProcess.HasExited -and -not $frontendProcess.HasExited) { Start-Sleep -Seconds 2 }
         throw 'A service exited; inspect its logs. The companion process will be stopped.'
     } finally {

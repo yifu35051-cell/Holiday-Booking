@@ -27,7 +27,8 @@ $package = 'com.holidaybooking.backend.'
 # 每个模块独立启动 Maven/JVM；依赖的测试数据由该模块自行创建。
 # 新增测试类时更新模块目录，并在 test-cases.json 登记详细规约；缺失时停止生成。
 $catalog = @(
-    @{ Key = 'Shared'; Name = '基础规则与启动'; Classes = @('shared.DomainRulesTest', 'shared.BackendApplicationTests'); Scope = '金额、入住区间、Spring 上下文'; Core = $true },
+    @{ Key = 'PaymentProtocol'; Name = 'WireMock protocol and callback security'; Classes = @('payment.SandboxProtocolTest'); Scope = 'HMAC, stale events, circuit recovery and HTTP fail-closed contract; no Docker or SMTP'; Core = $false },
+    @{ Key = 'Shared'; Name = '基础规则与启动'; Classes = @('shared.DomainRulesTest', 'shared.DesignBoundaryTest', 'shared.BackendApplicationTests'); Scope = '金额、入住区间、Spring 上下文'; Core = $true },
     @{ Key = 'Identity'; Name = '账户与安全'; Classes = @('identity.IdentityServiceTest', 'identity.ApiSecurityTest'); Scope = '注册、密码、管理员初始化、会话、CSRF、权限'; Core = $true },
     @{ Key = 'Catalog'; Name = '房源与库存'; Classes = @('catalog.CatalogServiceTest'); Scope = '房型、实体房、日期价、封房及连续可用性'; Core = $true },
     @{ Key = 'Booking'; Name = '报价与预订'; Classes = @('booking.BookingServiceTest'); Scope = '报价、占房、查询、归属、幂等、并发与回滚'; Core = $true },
@@ -38,7 +39,6 @@ $catalog = @(
     @{ Key = 'MembershipPaid'; Name = '会员支付后生命周期'; Classes = @('membership.MembershipLifecycleTest'); Scope = '通过本地模拟付款验证激活、续期、到期和折扣'; Core = $false },
     @{ Key = 'Notification'; Name = '预订业务通知'; Classes = @('notification.NotificationDeliveryTest'); Scope = '预订确认、提醒调度、过期抑制、租约、重试及配额；模拟SMTP'; Core = $false },
     @{ Key = 'Mail'; Name = '个人邮箱与邮件传输'; Classes = @('mail.MailboxTest', 'mail.EmailAdapterTest'); Scope = '三角色邮箱、管理员审计、权限、幂等、系统通知收件与通用SMTP适配'; Core = $false },
-    @{ Key = 'MailpitSmoke'; Name = '本地Mailpit连通性'; Classes = @('mail.MailpitSmokeTest'); Scope = '显式传-Dmailpit.smoke=true才发送到本机容器并检查捕获；默认跳过'; Core = $false },
     @{ Key = 'Integration'; Name = '本地跨模块流程'; Classes = @('integration.BusinessFlowTest'); Scope = '报价至模拟付款、确认及通知任务的业务闭环'; Core = $false },
     @{ Key = 'Changes'; Name = '取消改订与退款'; Classes = @('booking.BookingChangeTest'); Scope = '取消、版本与库存差集、补款、幂等退款、24小时政策；本地模拟支付'; Core = $false },
     @{ Key = 'MySql'; Name = 'Docker MySQL 事务'; Classes = @('integration.MySqlBookingIT'); Scope = '在独立 MySQL 8.4 容器重用预订用例；需要 Docker'; Core = $false }
@@ -60,7 +60,6 @@ function Show-Modules {
     }
     Write-Host 'All = 先单模块再集成；Core = 核心六模块；-Stage Modules/Integrated = 仅指定阶段。'
     Write-Host '-Role Customer/Staff/Admin/Guest/System 可按用例归属筛选；System不是账户角色。'
-    Write-Host 'MailpitSmoke须单独选择并传-MavenOptions "-Dmailpit.smoke=true"；All不包含该外部容器检查。'
 }
 
 function Read-Cases {
@@ -197,7 +196,8 @@ function Write-CaseDocument {
             }
             $lines.AddRange([string[]]@('', '</details>', ''))
         }
-        [IO.File]::WriteAllLines((Join-Path $projectRoot ('docs/testing/' + $page.File)), $lines, $utf8)
+        [IO.File]::WriteAllText((Join-Path $projectRoot ('docs/testing/' + $page.File)),
+            ([string]::Join([Environment]::NewLine, $lines)).TrimEnd() + [Environment]::NewLine, $utf8)
     }
     $index = @(
         '# 后端测试：按顺序执行', '',
@@ -209,7 +209,9 @@ function Write-CaseDocument {
         '先看[角色功能与测试](../README.md#roles)，区分顾客、员工、管理员。第一阶段含纯单元与MySQL模块测试；第二阶段验证联动。所有数据库测试都需要Docker，不需安装MySQL或先启动后端；Testcontainers自动建立临时MySQL 8.4，不使用开发库。', '',
         '在项目根目录执行：', '',
         '~~~powershell',
-        '# 当前先做核心模块，暂缓支付和邮件',
+        '# 纯支付协议检查，不需要Docker或SMTP',
+        'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules PaymentProtocol',
+        '# 核心业务模块，数据库用例需要Docker中的隔离MySQL',
         'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Core',
         '# 单独选择一个或多个模块',
         'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules Identity,Booking',
@@ -224,7 +226,7 @@ function Write-CaseDocument {
         '# 全选：严格先第一阶段、再第二阶段',
         'powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\Test-Backend.ps1 -Modules All',
         '~~~', '',
-        '不带参数显示选择菜单；-List只列模块；-PrepareOnly只生成待执行文档，不运行测试。MailpitSmoke不包含在All中，需单独选择并传-MavenOptions "-Dmailpit.smoke=true"才会向本机容器发信。', '',
+        'Use -List to list modules, -PrepareOnly to generate pending case tables. Real DirectMail validation is separate and opt-in.', '',
         "当前记录：$RunLabel。", '',
         '执行后自动更新两份用例表的实际结果，未选模块显示未执行。本次日志、逐类完整报告及两份表的快照保存在results/java-时间戳/，历史记录保留。单模块失败后仍会继续其他所选模块。', '',
         '退出码：0=全部所选用例通过；1=构建/测试/报告异常；2=存在跳过或中止。-PrepareOnly会重置当前用例表，历史results不受影响。'
@@ -252,7 +254,6 @@ foreach ($token in (($Modules -join ',') -split '[,，\s]+')) {
     if (-not $token) { continue }
     if ($token -eq 'All' -or $token -eq 'Core') {
         foreach ($module in $catalog) {
-            if ($module.Key -eq 'MailpitSmoke') { continue }
             if ($token -eq 'All' -or $module.Core) { $selected[$module.Key] = $true }
         }
         continue

@@ -33,6 +33,7 @@ try {
     $deliveryConfig = Join-Path $destination 'config'
     New-Item -ItemType Directory -Path $deliveryConfig | Out-Null
     Copy-Item -LiteralPath (Join-Path $projectRoot 'config/compose.yaml') -Destination $deliveryConfig
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'config/wiremock') -Destination $deliveryConfig -Recurse
     $example = Get-Content -LiteralPath (Join-Path $projectRoot 'config/deployment.env.example') -Raw -Encoding UTF8
     $example = $example -replace '(?m)^APP_VERSION=.*$', "APP_VERSION=$Version"
     [IO.File]::WriteAllText((Join-Path $deliveryConfig 'deployment.env.example'), $example, (New-Object Text.UTF8Encoding($false)))

@@ -3,13 +3,13 @@
   "cases": {
     "com.holidaybooking.backend.booking.BookingChangeTest#unpaidCancellationIsIdempotentAndReleasesInventory": {
       "id": "CH-001",
-      "title": "未付款取消与幂等",
-      "level": "集成",
+      "title": "\u672a\u4ed8\u6b3e\u53d6\u6d88\u4e0e\u5e42\u7b49",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "公共数据；独立MySQL；本地模拟支付",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b\u72ec\u7acbMySQL\uff1b\u672c\u5730\u6a21\u62df\u652f\u4ed8",
       "input": {
         "basePrice": "100.05",
         "checkIn": "2026-11-10",
@@ -20,23 +20,23 @@
         "Idempotency-Key": "same UUID for two submissions"
       },
       "steps": [
-        "100.05/晚、两晚未付款预订；取消报价后以相同幂等键提交两次"
+        "100.05/\u665a\u3001\u4e24\u665a\u672a\u4ed8\u6b3e\u9884\u8ba2\uff1b\u53d6\u6d88\u62a5\u4ef7\u540e\u4ee5\u76f8\u540c\u5e42\u7b49\u952e\u63d0\u4ea4\u4e24\u6b21"
       ],
-      "output": "同一变更APPLIED；预订CANCELLED；应付单EXPIRED；占房0；无退款",
+      "output": "\u540c\u4e00\u53d8\u66f4APPLIED\uff1b\u9884\u8ba2CANCELLED\uff1b\u5e94\u4ed8\u5355EXPIRED\uff1b\u5360\u623f0\uff1b\u65e0\u9000\u6b3e",
       "checks": [
-        "同一变更APPLIED；预订CANCELLED；应付单EXPIRED；占房0；无退款"
+        "\u540c\u4e00\u53d8\u66f4APPLIED\uff1b\u9884\u8ba2CANCELLED\uff1b\u5e94\u4ed8\u5355EXPIRED\uff1b\u5360\u623f0\uff1b\u65e0\u9000\u6b3e"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingChangeTest#paidCancellationReservesAndRefundsExactlyOnce": {
       "id": "CH-002",
-      "title": "已付款取消与幂等退款",
-      "level": "集成",
+      "title": "\u5df2\u4ed8\u6b3e\u53d6\u6d88\u4e0e\u5e42\u7b49\u9000\u6b3e",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "公共数据；独立MySQL；本地模拟支付",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b\u72ec\u7acbMySQL\uff1b\u672c\u5730\u6a21\u62df\u652f\u4ed8",
       "input": {
         "paidAmount": "200.10",
         "method": "Alipay",
@@ -46,23 +46,23 @@
         "refreshCount": 2
       },
       "steps": [
-        "已支付200.10的两晚预订；取消后刷新同一退款两次"
+        "\u5df2\u652f\u4ed8200.10\u7684\u4e24\u665a\u9884\u8ba2\uff1b\u53d6\u6d88\u540e\u5237\u65b0\u540c\u4e00\u9000\u6b3e\u4e24\u6b21"
       ],
-      "output": "取消释放所有BOOKED；退款先PENDING再SUCCEEDED；金额200.10；mock_refund仅一条",
+      "output": "\u53d6\u6d88\u91ca\u653e\u6240\u6709BOOKED\uff1b\u9000\u6b3e\u5148PENDING\u518dSUCCEEDED\uff1b\u91d1\u989d200.10\uff1bmock_refund\u4ec5\u4e00\u6761",
       "checks": [
-        "取消释放所有BOOKED；退款先PENDING再SUCCEEDED；金额200.10；mock_refund仅一条"
+        "\u53d6\u6d88\u91ca\u653e\u6240\u6709BOOKED\uff1b\u9000\u6b3e\u5148PENDING\u518dSUCCEEDED\uff1b\u91d1\u989d200.10\uff1bmock_refund\u4ec5\u4e00\u6761"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingChangeTest#cheaperAmendmentReusesOwnRoomAndPreservesHistory": {
       "id": "CH-003",
-      "title": "降价改订与版本保留",
-      "level": "集成",
+      "title": "\u964d\u4ef7\u6539\u8ba2\u4e0e\u7248\u672c\u4fdd\u7559",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "公共数据；独立MySQL；本地模拟支付",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b\u72ec\u7acbMySQL\uff1b\u672c\u5730\u6a21\u62df\u652f\u4ed8",
       "input": {
         "oldCheckOut": "2026-11-12",
         "newCheckOut": "2026-11-11",
@@ -79,23 +79,23 @@
         "newTotal": "100.05"
       },
       "steps": [
-        "已支付两晚200.10；同一房间改成一晚100.05；新入住仍11月10日"
+        "\u5df2\u652f\u4ed8\u4e24\u665a200.10\uff1b\u540c\u4e00\u623f\u95f4\u6539\u6210\u4e00\u665a100.05\uff1b\u65b0\u5165\u4f4f\u4ecd11\u670810\u65e5"
       ],
-      "output": "APPLIED；revision=2；仅1晚BOOKED；差价-100.05；退款PENDING；退款完成前禁止再次变更",
+      "output": "APPLIED\uff1brevision=2\uff1b\u4ec51\u665aBOOKED\uff1b\u5dee\u4ef7-100.05\uff1b\u9000\u6b3ePENDING\uff1b\u9000\u6b3e\u5b8c\u6210\u524d\u7981\u6b62\u518d\u6b21\u53d8\u66f4",
       "checks": [
-        "APPLIED；revision=2；仅1晚BOOKED；差价-100.05；退款PENDING；退款完成前禁止再次变更"
+        "APPLIED\uff1brevision=2\uff1b\u4ec51\u665aBOOKED\uff1b\u5dee\u4ef7-100.05\uff1b\u9000\u6b3ePENDING\uff1b\u9000\u6b3e\u5b8c\u6210\u524d\u7981\u6b62\u518d\u6b21\u53d8\u66f4"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingChangeTest#supplementKeepsOriginalUntilPaidAndRefundsAcrossPayments": {
       "id": "CH-004",
-      "title": "补款生效与跨支付退款",
-      "level": "集成",
+      "title": "\u8865\u6b3e\u751f\u6548\u4e0e\u8de8\u652f\u4ed8\u9000\u6b3e",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "公共数据；独立MySQL；本地模拟支付",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b\u72ec\u7acbMySQL\uff1b\u672c\u5730\u6a21\u62df\u652f\u4ed8",
       "input": {
         "checkIn": "2026-11-10",
         "oldCheckOut": "2026-11-12",
@@ -113,23 +113,23 @@
         "provider": "MOCK"
       },
       "steps": [
-        "两晚200.10改为三晚300.15；支付补款100.05后取消整单"
+        "\u4e24\u665a200.10\u6539\u4e3a\u4e09\u665a300.15\uff1b\u652f\u4ed8\u8865\u6b3e100.05\u540e\u53d6\u6d88\u6574\u5355"
       ],
-      "output": "补款前原revision=1且BOOKED=2、HELD=1；补款后revision=2、BOOKED=3；取消退款合计300.15分配到两笔支付",
+      "output": "\u8865\u6b3e\u524d\u539frevision=1\u4e14BOOKED=2\u3001HELD=1\uff1b\u8865\u6b3e\u540erevision=2\u3001BOOKED=3\uff1b\u53d6\u6d88\u9000\u6b3e\u5408\u8ba1300.15\u5206\u914d\u5230\u4e24\u7b14\u652f\u4ed8",
       "checks": [
-        "补款前原revision=1且BOOKED=2、HELD=1；补款后revision=2、BOOKED=3；取消退款合计300.15分配到两笔支付"
+        "\u8865\u6b3e\u524d\u539frevision=1\u4e14BOOKED=2\u3001HELD=1\uff1b\u8865\u6b3e\u540erevision=2\u3001BOOKED=3\uff1b\u53d6\u6d88\u9000\u6b3e\u5408\u8ba1300.15\u5206\u914d\u5230\u4e24\u7b14\u652f\u4ed8"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingChangeTest#expiredSupplementOnlyReleasesAdditionalNights": {
       "id": "CH-005",
-      "title": "补款超时只释放新增占房",
-      "level": "集成",
+      "title": "\u8865\u6b3e\u8d85\u65f6\u53ea\u91ca\u653e\u65b0\u589e\u5360\u623f",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "公共数据；独立MySQL；本地模拟支付",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b\u72ec\u7acbMySQL\uff1b\u672c\u5730\u6a21\u62df\u652f\u4ed8",
       "input": {
         "checkIn": "2026-11-10",
         "oldCheckOut": "2026-11-12",
@@ -139,23 +139,23 @@
         "refreshOrderId": "$change.paymentOrderId"
       },
       "steps": [
-        "两晚改三晚，未发起补款；时钟推进16分钟后刷新补款单"
+        "\u4e24\u665a\u6539\u4e09\u665a\uff0c\u672a\u53d1\u8d77\u8865\u6b3e\uff1b\u65f6\u949f\u63a8\u8fdb16\u5206\u949f\u540e\u5237\u65b0\u8865\u6b3e\u5355"
       ],
-      "output": "变更EXPIRED；原预订CONFIRMED且revision=1；保留2晚BOOKED，仅释放新增HELD",
+      "output": "\u53d8\u66f4EXPIRED\uff1b\u539f\u9884\u8ba2CONFIRMED\u4e14revision=1\uff1b\u4fdd\u75592\u665aBOOKED\uff0c\u4ec5\u91ca\u653e\u65b0\u589eHELD",
       "checks": [
-        "变更EXPIRED；原预订CONFIRMED且revision=1；保留2晚BOOKED，仅释放新增HELD"
+        "\u53d8\u66f4EXPIRED\uff1b\u539f\u9884\u8ba2CONFIRMED\u4e14revision=1\uff1b\u4fdd\u75592\u665aBOOKED\uff0c\u4ec5\u91ca\u653e\u65b0\u589eHELD"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingChangeTest#ownershipAndTwentyFourHourBoundaryAreEnforced": {
       "id": "CH-006",
-      "title": "归属与24小时边界",
-      "level": "集成",
+      "title": "\u5f52\u5c5e\u4e0e24\u5c0f\u65f6\u8fb9\u754c",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "公共数据；独立MySQL；本地模拟支付",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b\u72ec\u7acbMySQL\uff1b\u672c\u5730\u6a21\u62df\u652f\u4ed8",
       "input": {
         "owner": "$U",
         "otherUser": "$V",
@@ -166,22 +166,22 @@
         "submitAt": "2026-11-09T07:00:01Z"
       },
       "steps": [
-        "他人尝试取消；本人在入住前24小时报价，再推进1秒提交"
+        "\u4ed6\u4eba\u5c1d\u8bd5\u53d6\u6d88\uff1b\u672c\u4eba\u5728\u5165\u4f4f\u524d24\u5c0f\u65f6\u62a5\u4ef7\uff0c\u518d\u63a8\u8fdb1\u79d2\u63d0\u4ea4"
       ],
-      "output": "他人NOT_FOUND；24小时整允许报价；不足24小时NOTICE_PERIOD，原预订及库存不变",
+      "output": "\u4ed6\u4ebaNOT_FOUND\uff1b24\u5c0f\u65f6\u6574\u5141\u8bb8\u62a5\u4ef7\uff1b\u4e0d\u8db324\u5c0f\u65f6NOTICE_PERIOD\uff0c\u539f\u9884\u8ba2\u53ca\u5e93\u5b58\u4e0d\u53d8",
       "checks": [
-        "他人NOT_FOUND；24小时整允许报价；不足24小时NOTICE_PERIOD，原预订及库存不变"
+        "\u4ed6\u4ebaNOT_FOUND\uff1b24\u5c0f\u65f6\u6574\u5141\u8bb8\u62a5\u4ef7\uff1b\u4e0d\u8db324\u5c0f\u65f6NOTICE_PERIOD\uff0c\u539f\u9884\u8ba2\u53ca\u5e93\u5b58\u4e0d\u53d8"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingServiceTest#competingCustomersCannotBothBookTheLastRoom": {
       "id": "BO-001",
-      "title": "最后一间房并发防重售",
-      "level": "服务集成/并发",
+      "title": "\u6700\u540e\u4e00\u95f4\u623f\u5e76\u53d1\u9632\u91cd\u552e",
+      "level": "\u670d\u52a1\u96c6\u6210/\u5e76\u53d1",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； U/V两个用户；同房型仅1间房。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b U/V\u4e24\u4e2a\u7528\u6237\uff1b\u540c\u623f\u578b\u4ec51\u95f4\u623f\u3002",
       "input": {
         "quotes": [
           {
@@ -205,24 +205,24 @@
         "timeoutSeconds": 15
       },
       "steps": [
-        "两个用户持有同一房型报价，同时提交最后1间房的2晚预订"
+        "\u4e24\u4e2a\u7528\u6237\u6301\u6709\u540c\u4e00\u623f\u578b\u62a5\u4ef7\uff0c\u540c\u65f6\u63d0\u4ea4\u6700\u540e1\u95f4\u623f\u76842\u665a\u9884\u8ba2"
       ],
-      "output": "并发结果恰好一个true一个false；库存表只有2个夜记录",
+      "output": "\u5e76\u53d1\u7ed3\u679c\u6070\u597d\u4e00\u4e2atrue\u4e00\u4e2afalse\uff1b\u5e93\u5b58\u8868\u53ea\u67092\u4e2a\u591c\u8bb0\u5f55",
       "checks": [
-        "无序结果严格为[true,false]。",
-        "room_night join room按room_type_id=T过滤count=2。"
+        "\u65e0\u5e8f\u7ed3\u679c\u4e25\u683c\u4e3a[true,false]\u3002",
+        "room_night join room\u6309room_type_id=T\u8fc7\u6ee4count=2\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingServiceTest#multiTypeFailureRollsBackConsumptionAndAnyInventoryChanges": {
       "id": "BO-002",
-      "title": "多房型下单失败的事务回滚",
-      "level": "服务集成/事务",
+      "title": "\u591a\u623f\u578b\u4e0b\u5355\u5931\u8d25\u7684\u4e8b\u52a1\u56de\u6eda",
+      "level": "\u670d\u52a1\u96c6\u6210/\u4e8b\u52a1",
       "roles": [
         "Customer",
         "Staff"
       ],
-      "fixture": "公共数据； 房型A/B各1间。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b \u623f\u578bA/B\u54041\u95f4\u3002",
       "input": {
         "selections": [
           {
@@ -237,31 +237,31 @@
           }
         ],
         "afterQuoteBlock": {
-          "room": "$B唯一房",
+          "room": "$B\u552f\u4e00\u623f",
           "stay": "$S",
           "reason": "Maintenance"
         },
         "key": "atomic-book-key"
       },
       "steps": [
-        "两个房型报价后封住第二房型，再创建预订"
+        "\u4e24\u4e2a\u623f\u578b\u62a5\u4ef7\u540e\u5c01\u4f4f\u7b2c\u4e8c\u623f\u578b\uff0c\u518d\u521b\u5efa\u9884\u8ba2"
       ],
-      "output": "整笔失败；报价consumed_at为空；第一房型仍可用",
+      "output": "\u6574\u7b14\u5931\u8d25\uff1b\u62a5\u4ef7consumed_at\u4e3a\u7a7a\uff1b\u7b2c\u4e00\u623f\u578b\u4ecd\u53ef\u7528",
       "checks": [
-        "下单失败。",
-        "同一报价consumed_at=null。",
-        "A仍在可用性返回列表。"
+        "\u4e0b\u5355\u5931\u8d25\u3002",
+        "\u540c\u4e00\u62a5\u4ef7consumed_at=null\u3002",
+        "A\u4ecd\u5728\u53ef\u7528\u6027\u8fd4\u56de\u5217\u8868\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingServiceTest#expiredQuoteAndChangedIdempotencyPayloadAreRejected": {
       "id": "BO-003",
-      "title": "报价过期与幂等请求内容冲突",
-      "level": "服务集成",
+      "title": "\u62a5\u4ef7\u8fc7\u671f\u4e0e\u5e42\u7b49\u8bf7\u6c42\u5185\u5bb9\u51b2\u7a81",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 2间房。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b 2\u95f4\u623f\u3002",
       "input": {
         "advanceMinutes": 11,
         "expiredKey": "expired-quote-key",
@@ -273,24 +273,24 @@
         }
       },
       "steps": [
-        "报价后推进11分钟；新报价下单后同键更改联系人"
+        "\u62a5\u4ef7\u540e\u63a8\u8fdb11\u5206\u949f\uff1b\u65b0\u62a5\u4ef7\u4e0b\u5355\u540e\u540c\u952e\u66f4\u6539\u8054\u7cfb\u4eba"
       ],
-      "output": "分别拒绝过期报价和不同内容复用幂等键",
+      "output": "\u5206\u522b\u62d2\u7edd\u8fc7\u671f\u62a5\u4ef7\u548c\u4e0d\u540c\u5185\u5bb9\u590d\u7528\u5e42\u7b49\u952e",
       "checks": [
-        "超过10分钟的报价拒绝。",
-        "同幂等键但联系人改变的请求拒绝。"
+        "\u8d85\u8fc710\u5206\u949f\u7684\u62a5\u4ef7\u62d2\u7edd\u3002",
+        "\u540c\u5e42\u7b49\u952e\u4f46\u8054\u7cfb\u4eba\u6539\u53d8\u7684\u8bf7\u6c42\u62d2\u7edd\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingServiceTest#ownershipAndOccupiedRoomProtectionApplyInServices": {
       "id": "BO-004",
-      "title": "资源归属和未来占房保护",
-      "level": "服务集成",
+      "title": "\u8d44\u6e90\u5f52\u5c5e\u548c\u672a\u6765\u5360\u623f\u4fdd\u62a4",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer",
         "Staff"
       ],
-      "fixture": "公共数据； 1间房、另一个用户V。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b 1\u95f4\u623f\u3001\u53e6\u4e00\u4e2a\u7528\u6237V\u3002",
       "input": {
         "key": "protected-booking-key",
         "reads": [
@@ -310,23 +310,23 @@
         }
       },
       "steps": [
-        "其他用户读取预订/应付单；尝试停用有未来占用的实体房"
+        "\u5176\u4ed6\u7528\u6237\u8bfb\u53d6\u9884\u8ba2/\u5e94\u4ed8\u5355\uff1b\u5c1d\u8bd5\u505c\u7528\u6709\u672a\u6765\u5360\u7528\u7684\u5b9e\u4f53\u623f"
       ],
-      "output": "越权读取和停用操作均被拒绝",
+      "output": "\u8d8a\u6743\u8bfb\u53d6\u548c\u505c\u7528\u64cd\u4f5c\u5747\u88ab\u62d2\u7edd",
       "checks": [
-        "越权预订/应付单读取均失败。",
-        "占房期间停用房间失败。"
+        "\u8d8a\u6743\u9884\u8ba2/\u5e94\u4ed8\u5355\u8bfb\u53d6\u5747\u5931\u8d25\u3002",
+        "\u5360\u623f\u671f\u95f4\u505c\u7528\u623f\u95f4\u5931\u8d25\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingServiceTest#pendingBookingPreservesQuoteAndSupportsFilteredQueries": {
       "id": "BO-005",
-      "title": "报价快照、幂等重放与预订筛选",
-      "level": "服务集成",
+      "title": "\u62a5\u4ef7\u5feb\u7167\u3001\u5e42\u7b49\u91cd\u653e\u4e0e\u9884\u8ba2\u7b5b\u9009",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 1间房。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b 1\u95f4\u623f\u3002",
       "input": {
         "newRate": "999",
         "key": "pending-snapshot-key",
@@ -350,25 +350,25 @@
         ]
       },
       "steps": [
-        "100.05/晚、住2晚的报价；报价后改当前房价999；相同幂等键重复下单"
+        "100.05/\u665a\u3001\u4f4f2\u665a\u7684\u62a5\u4ef7\uff1b\u62a5\u4ef7\u540e\u6539\u5f53\u524d\u623f\u4ef7999\uff1b\u76f8\u540c\u5e42\u7b49\u952e\u91cd\u590d\u4e0b\u5355"
       ],
-      "output": "报价和订单仍200.10；PENDING_PAYMENT；同键同ID；列表按用户/状态/日期筛选；非法分页拒绝",
+      "output": "\u62a5\u4ef7\u548c\u8ba2\u5355\u4ecd200.10\uff1bPENDING_PAYMENT\uff1b\u540c\u952e\u540cID\uff1b\u5217\u8868\u6309\u7528\u6237/\u72b6\u6001/\u65e5\u671f\u7b5b\u9009\uff1b\u975e\u6cd5\u5206\u9875\u62d2\u7edd",
       "checks": [
-        "报价后availableRooms=1；订单totalAmount=\"200.10\"、status=PENDING_PAYMENT。",
-        "相同键返回同一ID。",
-        "本人过滤total=1；V的total=0。",
-        "size=101及from>to均抛DomainException。"
+        "\u62a5\u4ef7\u540eavailableRooms=1\uff1b\u8ba2\u5355totalAmount=\"200.10\"\u3001status=PENDING_PAYMENT\u3002",
+        "\u76f8\u540c\u952e\u8fd4\u56de\u540c\u4e00ID\u3002",
+        "\u672c\u4eba\u8fc7\u6ee4total=1\uff1bV\u7684total=0\u3002",
+        "size=101\u53cafrom>to\u5747\u629bDomainException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.booking.BookingServiceTest#quoteLimitsAndOwnershipAreEnforced": {
       "id": "BO-006",
-      "title": "选择限制与报价所有权",
-      "level": "服务集成",
+      "title": "\u9009\u62e9\u9650\u5236\u4e0e\u62a5\u4ef7\u6240\u6709\u6743",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 1间房。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b 1\u95f4\u623f\u3002",
       "input": {
         "invalidSelections": [
           [
@@ -402,23 +402,23 @@
         "correctOwnerKey": "correct-quote-owner"
       },
       "steps": [
-        "重复房型选择、每间3人但容量2、请求11间以及他人消费本人的报价"
+        "\u91cd\u590d\u623f\u578b\u9009\u62e9\u3001\u6bcf\u95f43\u4eba\u4f46\u5bb9\u91cf2\u3001\u8bf7\u6c4211\u95f4\u4ee5\u53ca\u4ed6\u4eba\u6d88\u8d39\u672c\u4eba\u7684\u62a5\u4ef7"
       ],
-      "output": "非法选择/容量/数量返回业务异常；他人消费报价NOT_FOUND，报价仍可由本人成功下单",
+      "output": "\u975e\u6cd5\u9009\u62e9/\u5bb9\u91cf/\u6570\u91cf\u8fd4\u56de\u4e1a\u52a1\u5f02\u5e38\uff1b\u4ed6\u4eba\u6d88\u8d39\u62a5\u4ef7NOT_FOUND\uff0c\u62a5\u4ef7\u4ecd\u53ef\u7531\u672c\u4eba\u6210\u529f\u4e0b\u5355",
       "checks": [
-        "前三种非法选择与越权消费均拒绝。",
-        "U最终仍可下单，status=PENDING_PAYMENT。"
+        "\u524d\u4e09\u79cd\u975e\u6cd5\u9009\u62e9\u4e0e\u8d8a\u6743\u6d88\u8d39\u5747\u62d2\u7edd\u3002",
+        "U\u6700\u7ec8\u4ecd\u53ef\u4e0b\u5355\uff0cstatus=PENDING_PAYMENT\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.catalog.CatalogServiceTest#dailyFreeCountsDoNotImplyAContinuousAvailableRoom": {
       "id": "CA-001",
-      "title": "同一实体房连续多晚可用性",
-      "level": "服务集成",
+      "title": "\u540c\u4e00\u5b9e\u4f53\u623f\u8fde\u7eed\u591a\u665a\u53ef\u7528\u6027",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 创建2间房。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b \u521b\u5efa2\u95f4\u623f\u3002",
       "input": {
         "blocks": [
           {
@@ -440,24 +440,24 @@
         }
       },
       "steps": [
-        "2间实体房，在2晚中分别封住不同一晚"
+        "2\u95f4\u5b9e\u4f53\u623f\uff0c\u57282\u665a\u4e2d\u5206\u522b\u5c01\u4f4f\u4e0d\u540c\u4e00\u665a"
       ],
-      "output": "没有完整连续可住房；创建报价被拒绝",
+      "output": "\u6ca1\u6709\u5b8c\u6574\u8fde\u7eed\u53ef\u4f4f\u623f\uff1b\u521b\u5efa\u62a5\u4ef7\u88ab\u62d2\u7edd",
       "checks": [
-        "返回列表不含房型T。",
-        "quote(U,T)抛DomainException。"
+        "\u8fd4\u56de\u5217\u8868\u4e0d\u542b\u623f\u578bT\u3002",
+        "quote(U,T)\u629bDomainException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.catalog.CatalogServiceTest#ratesBlocksAndRoomLifecycleUpdateAvailability": {
       "id": "CA-002",
-      "title": "日期价、封房及实体房启停",
-      "level": "服务集成",
+      "title": "\u65e5\u671f\u4ef7\u3001\u5c01\u623f\u53ca\u5b9e\u4f53\u623f\u542f\u505c",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Admin",
         "Staff"
       ],
-      "fixture": "公共数据； 创建2间房。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b \u521b\u5efa2\u95f4\u623f\u3002",
       "input": {
         "updateType": {
           "name": "Updated",
@@ -479,26 +479,26 @@
         }
       },
       "steps": [
-        "2间房，基础价改220，首晚覆盖300，住2晚；随后封房、解除、停用和启用实体房"
+        "2\u95f4\u623f\uff0c\u57fa\u7840\u4ef7\u6539220\uff0c\u9996\u665a\u8986\u76d6300\uff0c\u4f4f2\u665a\uff1b\u968f\u540e\u5c01\u623f\u3001\u89e3\u9664\u3001\u505c\u7528\u548c\u542f\u7528\u5b9e\u4f53\u623f"
       ],
-      "output": "总价520.00；库存2→1→2→1→2；封房历史保留；重复封房冲突",
+      "output": "\u603b\u4ef7520.00\uff1b\u5e93\u5b582\u21921\u21922\u21921\u21922\uff1b\u5c01\u623f\u5386\u53f2\u4fdd\u7559\uff1b\u91cd\u590d\u5c01\u623f\u51b2\u7a81",
       "checks": [
-        "totalPerRoom=\"520.00\"；可用房数按2→1→2→1→2变化。",
-        "首次封房后blocks列表size=1。",
-        "重复封房抛数据库完整性异常。",
-        "停用返回active=false、启用true；rooms列表size=2。"
+        "totalPerRoom=\"520.00\"\uff1b\u53ef\u7528\u623f\u6570\u63092\u21921\u21922\u21921\u21922\u53d8\u5316\u3002",
+        "\u9996\u6b21\u5c01\u623f\u540eblocks\u5217\u8868size=1\u3002",
+        "\u91cd\u590d\u5c01\u623f\u629b\u6570\u636e\u5e93\u5b8c\u6574\u6027\u5f02\u5e38\u3002",
+        "\u505c\u7528\u8fd4\u56deactive=false\u3001\u542f\u7528true\uff1brooms\u5217\u8868size=2\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.catalog.CatalogServiceTest#inactiveTypesAreHiddenAndPartyLimitsAreValidated": {
       "id": "CA-003",
-      "title": "停用房型隐藏与查询人数限制",
-      "level": "服务集成",
+      "title": "\u505c\u7528\u623f\u578b\u9690\u85cf\u4e0e\u67e5\u8be2\u4eba\u6570\u9650\u5236",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer",
         "Admin"
       ],
-      "fixture": "公共数据； 创建1间房。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b \u521b\u5efa1\u95f4\u623f\u3002",
       "input": {
         "update": {
           "name": "Retired",
@@ -519,55 +519,55 @@
         ]
       },
       "steps": [
-        "创建房型后停用；分别调用公开列表、后台列表和详情"
+        "\u521b\u5efa\u623f\u578b\u540e\u505c\u7528\uff1b\u5206\u522b\u8c03\u7528\u516c\u5f00\u5217\u8868\u3001\u540e\u53f0\u5217\u8868\u548c\u8be6\u60c5"
       ],
-      "output": "公开列表不显示，后台保留，详情NOT_FOUND；非法人数和房间数被拒绝",
+      "output": "\u516c\u5f00\u5217\u8868\u4e0d\u663e\u793a\uff0c\u540e\u53f0\u4fdd\u7559\uff0c\u8be6\u60c5NOT_FOUND\uff1b\u975e\u6cd5\u4eba\u6570\u548c\u623f\u95f4\u6570\u88ab\u62d2\u7edd",
       "checks": [
-        "公开列表不含T，后台列表包含T。",
-        "detail及两个非法查询各抛DomainException。"
+        "\u516c\u5f00\u5217\u8868\u4e0d\u542bT\uff0c\u540e\u53f0\u5217\u8868\u5305\u542bT\u3002",
+        "detail\u53ca\u4e24\u4e2a\u975e\u6cd5\u67e5\u8be2\u5404\u629bDomainException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.identity.ApiSecurityTest#loginRotatesSessionAndCsrfThenLogoutInvalidatesAuthentication": {
       "id": "ID-003",
-      "title": "登录会话轮换、CSRF 更新与退出失效",
+      "title": "\u767b\u5f55\u4f1a\u8bdd\u8f6e\u6362\u3001CSRF \u66f4\u65b0\u4e0e\u9000\u51fa\u5931\u6548",
       "level": "HTTP/MockMvc",
       "roles": [
         "Customer"
       ],
-      "fixture": "先用Service注册UUID邮箱、test-password-123、Session Guest。",
+      "fixture": "\u5148\u7528Service\u6ce8\u518cUUID\u90ae\u7bb1\u3001test-password-123\u3001Session Guest\u3002",
       "input": {
         "login": {
-          "email": "$注册邮箱",
+          "email": "$\u6ce8\u518c\u90ae\u7bb1",
           "password": "test-password-123"
         },
         "initialRequest": "GET /api/v1/auth/csrf",
         "headers": {
           "Content-Type": "application/json",
-          "X-CSRF-TOKEN": "$匿名token"
+          "X-CSRF-TOKEN": "$\u533f\u540dtoken"
         },
-        "cookie": "SESSION=$匿名SESSION"
+        "cookie": "SESSION=$\u533f\u540dSESSION"
       },
       "steps": [
-        "获取匿名CSRF→密码登录→用旧token退出→刷新token退出→查询本人"
+        "\u83b7\u53d6\u533f\u540dCSRF\u2192\u5bc6\u7801\u767b\u5f55\u2192\u7528\u65e7token\u9000\u51fa\u2192\u5237\u65b0token\u9000\u51fa\u2192\u67e5\u8be2\u672c\u4eba"
       ],
-      "output": "登录200且会话变化；本人CUSTOMER；旧token403；正确退出204；退出后401",
+      "output": "\u767b\u5f55200\u4e14\u4f1a\u8bdd\u53d8\u5316\uff1b\u672c\u4ebaCUSTOMER\uff1b\u65e7token403\uff1b\u6b63\u786e\u9000\u51fa204\uff1b\u9000\u51fa\u540e401",
       "checks": [
-        "登录200且data.id为注册ID；返回SESSION非空且与匿名会话不同。",
-        "me返回200且data.role=CUSTOMER。",
-        "旧token退出403；新token退出204；退出后me为401。"
+        "\u767b\u5f55200\u4e14data.id\u4e3a\u6ce8\u518cID\uff1b\u8fd4\u56deSESSION\u975e\u7a7a\u4e14\u4e0e\u533f\u540d\u4f1a\u8bdd\u4e0d\u540c\u3002",
+        "me\u8fd4\u56de200\u4e14data.role=CUSTOMER\u3002",
+        "\u65e7token\u9000\u51fa403\uff1b\u65b0token\u9000\u51fa204\uff1b\u9000\u51fa\u540eme\u4e3a401\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.identity.ApiSecurityTest#anonymousAndCustomerRequestsCannotReachManagement": {
       "id": "ID-004",
-      "title": "匿名、降级角色及缺少 CSRF 的访问拒绝",
+      "title": "\u533f\u540d\u3001\u964d\u7ea7\u89d2\u8272\u53ca\u7f3a\u5c11 CSRF \u7684\u8bbf\u95ee\u62d2\u7edd",
       "level": "HTTP/MockMvc",
       "roles": [
         "Guest",
         "Customer"
       ],
-      "fixture": "创建数据库角色CUSTOMER；MockMvc故意给该用户旧ADMIN认证。",
+      "fixture": "\u521b\u5efa\u6570\u636e\u5e93\u89d2\u8272CUSTOMER\uff1bMockMvc\u6545\u610f\u7ed9\u8be5\u7528\u6237\u65e7ADMIN\u8ba4\u8bc1\u3002",
       "input": {
         "requests": [
           {
@@ -590,24 +590,24 @@
         ]
       },
       "steps": [
-        "匿名访问后台；数据库CUSTOMER携带旧ADMIN认证；注册缺CSRF"
+        "\u533f\u540d\u8bbf\u95ee\u540e\u53f0\uff1b\u6570\u636e\u5e93CUSTOMER\u643a\u5e26\u65e7ADMIN\u8ba4\u8bc1\uff1b\u6ce8\u518c\u7f3aCSRF"
       ],
-      "output": "依次401、403、403",
+      "output": "\u4f9d\u6b21401\u3001403\u3001403",
       "checks": [
-        "未登录不能读后台。",
-        "数据库CUSTOMER不能使用旧ADMIN角色。",
-        "缺少CSRF在参数校验前拒绝。"
+        "\u672a\u767b\u5f55\u4e0d\u80fd\u8bfb\u540e\u53f0\u3002",
+        "\u6570\u636e\u5e93CUSTOMER\u4e0d\u80fd\u4f7f\u7528\u65e7ADMIN\u89d2\u8272\u3002",
+        "\u7f3a\u5c11CSRF\u5728\u53c2\u6570\u6821\u9a8c\u524d\u62d2\u7edd\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.identity.ApiSecurityTest#staffCanReadBookingsButCannotChangePrices": {
       "id": "ID-005",
-      "title": "员工读权限与价格管理隔离",
+      "title": "\u5458\u5de5\u8bfb\u6743\u9650\u4e0e\u4ef7\u683c\u7ba1\u7406\u9694\u79bb",
       "level": "HTTP/MockMvc",
       "roles": [
         "Staff"
       ],
-      "fixture": "注册Staff，再事务内将数据库角色改为STAFF；携带有效CSRF。",
+      "fixture": "\u6ce8\u518cStaff\uff0c\u518d\u4e8b\u52a1\u5185\u5c06\u6570\u636e\u5e93\u89d2\u8272\u6539\u4e3aSTAFF\uff1b\u643a\u5e26\u6709\u6548CSRF\u3002",
       "input": {
         "read": "GET /api/v1/admin/bookings",
         "write": "POST /api/v1/admin/room-types",
@@ -620,23 +620,23 @@
         }
       },
       "steps": [
-        "数据库角色STAFF查询后台预订并尝试创建房型"
+        "\u6570\u636e\u5e93\u89d2\u8272STAFF\u67e5\u8be2\u540e\u53f0\u9884\u8ba2\u5e76\u5c1d\u8bd5\u521b\u5efa\u623f\u578b"
       ],
-      "output": "查询200，创建房型403",
+      "output": "\u67e5\u8be2200\uff0c\u521b\u5efa\u623f\u578b403",
       "checks": [
-        "读取200；创建403。"
+        "\u8bfb\u53d6200\uff1b\u521b\u5efa403\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.identity.ApiSecurityTest#invalidCredentialsAndMalformedInputHaveStableErrors": {
       "id": "ID-006",
-      "title": "错误凭据与非法日期的 HTTP 错误",
+      "title": "\u9519\u8bef\u51ed\u636e\u4e0e\u975e\u6cd5\u65e5\u671f\u7684 HTTP \u9519\u8bef",
       "level": "HTTP/MockMvc",
       "roles": [
         "Guest",
         "Customer"
       ],
-      "fixture": "登录请求使用有效CSRF；nobody邮箱不存在。",
+      "fixture": "\u767b\u5f55\u8bf7\u6c42\u4f7f\u7528\u6709\u6548CSRF\uff1bnobody\u90ae\u7bb1\u4e0d\u5b58\u5728\u3002",
       "input": {
         "login": {
           "email": "nobody@example.com",
@@ -648,78 +648,78 @@
         }
       },
       "steps": [
-        "错误密码登录；checkIn为not-a-date"
+        "\u9519\u8bef\u5bc6\u7801\u767b\u5f55\uff1bcheckIn\u4e3anot-a-date"
       ],
-      "output": "登录401/AUTHENTICATION_FAILED；日期格式400且包含trace头",
+      "output": "\u767b\u5f55401/AUTHENTICATION_FAILED\uff1b\u65e5\u671f\u683c\u5f0f400\u4e14\u5305\u542btrace\u5934",
       "checks": [
-        "登录HTTP401且$.code为AUTHENTICATION_FAILED。",
-        "非法日期HTTP400，X-Trace-Id响应头存在。"
+        "\u767b\u5f55HTTP401\u4e14$.code\u4e3aAUTHENTICATION_FAILED\u3002",
+        "\u975e\u6cd5\u65e5\u671fHTTP400\uff0cX-Trace-Id\u54cd\u5e94\u5934\u5b58\u5728\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.identity.IdentityServiceTest#registrationNormalizesEmailHashesPasswordAndRejectsInvalidAccounts": {
       "id": "ID-001",
-      "title": "注册归一化、密码哈希及重复账户拒绝",
-      "level": "服务集成",
+      "title": "\u6ce8\u518c\u5f52\u4e00\u5316\u3001\u5bc6\u7801\u54c8\u5e0c\u53ca\u91cd\u590d\u8d26\u6237\u62d2\u7edd",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "独立UUID邮箱，用户名Guest。",
+      "fixture": "\u72ec\u7acbUUID\u90ae\u7bb1\uff0c\u7528\u6237\u540dGuest\u3002",
       "input": {
         "email": "Guest-<UUID>@EXAMPLE.COM",
         "password": "test-password-123",
         "displayName": "Guest",
         "duplicate": {
-          "email": "guest-<同一UUID>@example.com",
+          "email": "guest-<\u540c\u4e00UUID>@example.com",
           "displayName": "Other"
         },
         "invalidPassword": "short"
       },
       "steps": [
-        "大小写混合邮箱、合法测试密码、重复注册和短密码"
+        "\u5927\u5c0f\u5199\u6df7\u5408\u90ae\u7bb1\u3001\u5408\u6cd5\u6d4b\u8bd5\u5bc6\u7801\u3001\u91cd\u590d\u6ce8\u518c\u548c\u77ed\u5bc6\u7801"
       ],
-      "output": "邮箱归一化、角色 CUSTOMER、密码为 BCrypt 且可匹配；重复邮箱和短密码被拒绝",
+      "output": "\u90ae\u7bb1\u5f52\u4e00\u5316\u3001\u89d2\u8272 CUSTOMER\u3001\u5bc6\u7801\u4e3a BCrypt \u4e14\u53ef\u5339\u914d\uff1b\u91cd\u590d\u90ae\u7bb1\u548c\u77ed\u5bc6\u7801\u88ab\u62d2\u7edd",
       "checks": [
-        "email等于输入.toLowerCase()，role=\"CUSTOMER\"。",
-        "BCrypt matches=true且hash前缀$2。",
-        "重复邮箱与短密码分别抛DomainException。"
+        "email\u7b49\u4e8e\u8f93\u5165.toLowerCase()\uff0crole=\"CUSTOMER\"\u3002",
+        "BCrypt matches=true\u4e14hash\u524d\u7f00$2\u3002",
+        "\u91cd\u590d\u90ae\u7bb1\u4e0e\u77ed\u5bc6\u7801\u5206\u522b\u629bDomainException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.identity.IdentityServiceTest#administratorBootstrapIsExplicitAndDoesNotPromoteExistingCustomers": {
       "id": "ID-002",
-      "title": "显式管理员初始化与已有账户保护",
-      "level": "服务集成",
+      "title": "\u663e\u5f0f\u7ba1\u7406\u5458\u521d\u59cb\u5316\u4e0e\u5df2\u6709\u8d26\u6237\u4fdd\u62a4",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Admin"
       ],
-      "fixture": "保存原bootstrap设置；finally恢复；新UUID邮箱；另准备CUSTOMER。",
+      "fixture": "\u4fdd\u5b58\u539fbootstrap\u8bbe\u7f6e\uff1bfinally\u6062\u590d\uff1b\u65b0UUID\u90ae\u7bb1\uff1b\u53e6\u51c6\u5907CUSTOMER\u3002",
       "input": {
         "bootstrapEmail": "<UUID>@example.com",
         "firstPassword": "bootstrap-test-123",
         "secondPassword": "different-test-456",
-        "lastEmail": "$现有CUSTOMER.email"
+        "lastEmail": "$\u73b0\u6709CUSTOMER.email"
       },
       "steps": [
-        "新的 bootstrap 邮箱和合法密码，连续初始化两次，再将邮箱设为现有普通用户"
+        "\u65b0\u7684 bootstrap \u90ae\u7bb1\u548c\u5408\u6cd5\u5bc6\u7801\uff0c\u8fde\u7eed\u521d\u59cb\u5316\u4e24\u6b21\uff0c\u518d\u5c06\u90ae\u7bb1\u8bbe\u4e3a\u73b0\u6709\u666e\u901a\u7528\u6237"
       ],
-      "output": "仅创建一个 ADMIN；重复执行不重设密码；拒绝将已有普通账户提升为管理员",
+      "output": "\u4ec5\u521b\u5efa\u4e00\u4e2a ADMIN\uff1b\u91cd\u590d\u6267\u884c\u4e0d\u91cd\u8bbe\u5bc6\u7801\uff1b\u62d2\u7edd\u5c06\u5df2\u6709\u666e\u901a\u8d26\u6237\u63d0\u5347\u4e3a\u7ba1\u7406\u5458",
       "checks": [
-        "role=\"ADMIN\"；该邮箱count=1。",
-        "原密码仍matches=true，证明重跑未重置密码。",
-        "已有CUSTOMER启动初始化抛IllegalStateException，角色仍CUSTOMER。"
+        "role=\"ADMIN\"\uff1b\u8be5\u90ae\u7bb1count=1\u3002",
+        "\u539f\u5bc6\u7801\u4ecdmatches=true\uff0c\u8bc1\u660e\u91cd\u8dd1\u672a\u91cd\u7f6e\u5bc6\u7801\u3002",
+        "\u5df2\u6709CUSTOMER\u542f\u52a8\u521d\u59cb\u5316\u629bIllegalStateException\uff0c\u89d2\u8272\u4ecdCUSTOMER\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.integration.BusinessFlowTest#bookingSnapshotPaymentAndNotificationsFormOneConsistentFlow": {
       "id": "IN-001",
-      "title": "报价至模拟付款和通知的状态一致性",
-      "level": "集成",
+      "title": "\u62a5\u4ef7\u81f3\u6a21\u62df\u4ed8\u6b3e\u548c\u901a\u77e5\u7684\u72b6\u6001\u4e00\u81f4\u6027",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "公共数据； 1间房；log邮件发送器。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b 1\u95f4\u623f\uff1blog\u90ae\u4ef6\u53d1\u9001\u5668\u3002",
       "input": {
         "newRate": "999.00",
         "replayKey": "booking-key-0001",
@@ -727,27 +727,27 @@
         "paymentMethod": "Alipay"
       },
       "steps": [
-        "100.05元/晚住2晚，报价后改价999，重复下单，模拟付款并调度通知"
+        "100.05\u5143/\u665a\u4f4f2\u665a\uff0c\u62a5\u4ef7\u540e\u6539\u4ef7999\uff0c\u91cd\u590d\u4e0b\u5355\uff0c\u6a21\u62df\u4ed8\u6b3e\u5e76\u8c03\u5ea6\u901a\u77e5"
       ],
-      "output": "快照200.10；同键同ID；支付SUCCEEDED、预订CONFIRMED；2个库存夜、2个任务；确认SIMULATED；D1为11月9日01:00 UTC",
+      "output": "\u5feb\u7167200.10\uff1b\u540c\u952e\u540cID\uff1b\u652f\u4ed8SUCCEEDED\u3001\u9884\u8ba2CONFIRMED\uff1b2\u4e2a\u5e93\u5b58\u591c\u30012\u4e2a\u4efb\u52a1\uff1b\u786e\u8ba4SIMULATED\uff1bD1\u4e3a11\u67089\u65e501:00 UTC",
       "checks": [
-        "报价及订单totalAmount=\"200.10\"；重放ID相同；另键消费已用报价拒绝。",
-        "支付status=SUCCEEDED、预订status=CONFIRMED。",
-        "任务count=2，BOOKED库存夜count=2。",
-        "确认任务SIMULATED；D1 due_at=LocalDateTime(2026-11-09T01:00:00)。"
+        "\u62a5\u4ef7\u53ca\u8ba2\u5355totalAmount=\"200.10\"\uff1b\u91cd\u653eID\u76f8\u540c\uff1b\u53e6\u952e\u6d88\u8d39\u5df2\u7528\u62a5\u4ef7\u62d2\u7edd\u3002",
+        "\u652f\u4ed8status=SUCCEEDED\u3001\u9884\u8ba2status=CONFIRMED\u3002",
+        "\u4efb\u52a1count=2\uff0cBOOKED\u5e93\u5b58\u591ccount=2\u3002",
+        "\u786e\u8ba4\u4efb\u52a1SIMULATED\uff1bD1 due_at=LocalDateTime(2026-11-09T01:00:00)\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.management.ManagementApiTest#roleChangesImmediatelyAffectAuthorizationAndAreAudited": {
       "id": "MA-001",
-      "title": "角色变更实时生效及审计",
-      "level": "HTTP/MockMvc+服务",
+      "title": "\u89d2\u8272\u53d8\u66f4\u5b9e\u65f6\u751f\u6548\u53ca\u5ba1\u8ba1",
+      "level": "HTTP/MockMvc+\u670d\u52a1",
       "roles": [
         "Admin",
         "Staff",
         "Customer"
       ],
-      "fixture": "独立用户admin/staff；通过Service将admin设ADMIN，不属于被测HTTP步骤。",
+      "fixture": "\u72ec\u7acb\u7528\u6237admin/staff\uff1b\u901a\u8fc7Service\u5c06admin\u8bbeADMIN\uff0c\u4e0d\u5c5e\u4e8e\u88ab\u6d4bHTTP\u6b65\u9aa4\u3002",
       "input": {
         "change": "PUT /api/v1/admin/users/$staff/role",
         "body": {
@@ -762,25 +762,25 @@
         ]
       },
       "steps": [
-        "管理员将测试用户升为 STAFF，再降为 CUSTOMER；测试用户请求后台列表与管理员审计"
+        "\u7ba1\u7406\u5458\u5c06\u6d4b\u8bd5\u7528\u6237\u5347\u4e3a STAFF\uff0c\u518d\u964d\u4e3a CUSTOMER\uff1b\u6d4b\u8bd5\u7528\u6237\u8bf7\u6c42\u540e\u53f0\u5217\u8868\u4e0e\u7ba1\u7406\u5458\u5ba1\u8ba1"
       ],
-      "output": "员工可查后台预订但审计403；降级后旧认证访问后台403；记录本用户的CHANGE_ROLE审计；禁止改自己角色",
+      "output": "\u5458\u5de5\u53ef\u67e5\u540e\u53f0\u9884\u8ba2\u4f46\u5ba1\u8ba1403\uff1b\u964d\u7ea7\u540e\u65e7\u8ba4\u8bc1\u8bbf\u95ee\u540e\u53f0403\uff1b\u8bb0\u5f55\u672c\u7528\u6237\u7684CHANGE_ROLE\u5ba1\u8ba1\uff1b\u7981\u6b62\u6539\u81ea\u5df1\u89d2\u8272",
       "checks": [
-        "升角色200、data.role=STAFF。",
-        "后台列表200；STAFF审计403；降级后后台403。",
-        "针对staff资源的CHANGE_ROLE审计count=2。",
-        "修改自身角色抛DomainException。"
+        "\u5347\u89d2\u8272200\u3001data.role=STAFF\u3002",
+        "\u540e\u53f0\u5217\u8868200\uff1bSTAFF\u5ba1\u8ba1403\uff1b\u964d\u7ea7\u540e\u540e\u53f0403\u3002",
+        "\u9488\u5bf9staff\u8d44\u6e90\u7684CHANGE_ROLE\u5ba1\u8ba1count=2\u3002",
+        "\u4fee\u6539\u81ea\u8eab\u89d2\u8272\u629bDomainException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.management.ManagementApiTest#administratorCanMaintainCatalogAndReadAuditWithBoundedPagination": {
       "id": "MA-002",
-      "title": "管理员维护房型与分页边界",
-      "level": "HTTP/MockMvc+服务",
+      "title": "\u7ba1\u7406\u5458\u7ef4\u62a4\u623f\u578b\u4e0e\u5206\u9875\u8fb9\u754c",
+      "level": "HTTP/MockMvc+\u670d\u52a1",
       "roles": [
         "Admin"
       ],
-      "fixture": "独立ADMIN用户；MockMvc携带该ID及CSRF。",
+      "fixture": "\u72ec\u7acbADMIN\u7528\u6237\uff1bMockMvc\u643a\u5e26\u8be5ID\u53caCSRF\u3002",
       "input": {
         "create": {
           "name": "API Suite",
@@ -795,24 +795,24 @@
         ]
       },
       "steps": [
-        "具有数据库ADMIN角色的用户创建房型，再查询房型列表、审计和非法分页"
+        "\u5177\u6709\u6570\u636e\u5e93ADMIN\u89d2\u8272\u7684\u7528\u6237\u521b\u5efa\u623f\u578b\uff0c\u518d\u67e5\u8be2\u623f\u578b\u5217\u8868\u3001\u5ba1\u8ba1\u548c\u975e\u6cd5\u5206\u9875"
       ],
-      "output": "创建200且价格100.00；后台查询200；审计有CREATE_TYPE；size=101返回422和INVALID_PAGINATION",
+      "output": "\u521b\u5efa200\u4e14\u4ef7\u683c100.00\uff1b\u540e\u53f0\u67e5\u8be2200\uff1b\u5ba1\u8ba1\u6709CREATE_TYPE\uff1bsize=101\u8fd4\u56de422\u548cINVALID_PAGINATION",
       "checks": [
-        "创建200、data.basePrice=\"100.00\"；两个列表200。",
-        "size=101时422且code=INVALID_PAGINATION。",
-        "本admin存在CREATE_TYPE审计。"
+        "\u521b\u5efa200\u3001data.basePrice=\"100.00\"\uff1b\u4e24\u4e2a\u5217\u8868200\u3002",
+        "size=101\u65f6422\u4e14code=INVALID_PAGINATION\u3002",
+        "\u672cadmin\u5b58\u5728CREATE_TYPE\u5ba1\u8ba1\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.membership.MembershipLifecycleTest#paidMembershipActivatesOnceAndRenewalKeepsOriginalPlan": {
       "id": "MP-001",
-      "title": "会员激活幂等、原方案续费与折扣",
-      "level": "集成",
+      "title": "\u4f1a\u5458\u6fc0\u6d3b\u5e42\u7b49\u3001\u539f\u65b9\u6848\u7eed\u8d39\u4e0e\u6298\u6263",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 初始会员方案1（199.00/0.9000/365天）。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b \u521d\u59cb\u4f1a\u5458\u65b9\u68481\uff08199.00/0.9000/365\u5929\uff09\u3002",
       "input": {
         "first": {
           "planId": 1,
@@ -826,31 +826,31 @@
           "durationDays": 100
         },
         "renewal": {
-          "requestedPlan": "$新方案ID",
+          "requestedPlan": "$\u65b0\u65b9\u6848ID",
           "key": "member-key-0002",
           "method": "Alipay"
         }
       },
       "steps": [
-        "购买默认199元会员并重复模拟回调，再按新方案发起续费"
+        "\u8d2d\u4e70\u9ed8\u8ba4199\u5143\u4f1a\u5458\u5e76\u91cd\u590d\u6a21\u62df\u56de\u8c03\uff0c\u518d\u6309\u65b0\u65b9\u6848\u53d1\u8d77\u7eed\u8d39"
       ],
-      "output": "初始未激活；重复回调不延长；有效会员仍199元/0.9/365天；续期365天；两晚折后180.10",
+      "output": "\u521d\u59cb\u672a\u6fc0\u6d3b\uff1b\u91cd\u590d\u56de\u8c03\u4e0d\u5ef6\u957f\uff1b\u6709\u6548\u4f1a\u5458\u4ecd199\u5143/0.9/365\u5929\uff1b\u7eed\u671f365\u5929\uff1b\u4e24\u665a\u6298\u540e180.10",
       "checks": [
-        "付款前active=false。",
-        "重复付款后validUntil仍等于until。",
-        "续费fee=199.00、ratio=0.9000；新到期=until+365天。",
-        "两晚会员报价totalAmount=\"180.10\"。"
+        "\u4ed8\u6b3e\u524dactive=false\u3002",
+        "\u91cd\u590d\u4ed8\u6b3e\u540evalidUntil\u4ecd\u7b49\u4e8euntil\u3002",
+        "\u7eed\u8d39fee=199.00\u3001ratio=0.9000\uff1b\u65b0\u5230\u671f=until+365\u5929\u3002",
+        "\u4e24\u665a\u4f1a\u5458\u62a5\u4ef7totalAmount=\"180.10\"\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.membership.MembershipLifecycleTest#membershipExpiryInvalidatesAnOtherwiseUnexpiredQuote": {
       "id": "MP-002",
-      "title": "报价有效期间会员权益过期",
-      "level": "集成",
+      "title": "\u62a5\u4ef7\u6709\u6548\u671f\u95f4\u4f1a\u5458\u6743\u76ca\u8fc7\u671f",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 用户购买方案1，模拟Alipay付款。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b \u7528\u6237\u8d2d\u4e70\u65b9\u68481\uff0c\u6a21\u62dfAlipay\u4ed8\u6b3e\u3002",
       "input": {
         "purchaseKey": "expiring-membership-key",
         "fixtureSql": {
@@ -860,23 +860,23 @@
         "bookingKey": "expired-benefit-booking"
       },
       "steps": [
-        "已激活会员5分钟后到期，报价后推进6分钟"
+        "\u5df2\u6fc0\u6d3b\u4f1a\u54585\u5206\u949f\u540e\u5230\u671f\uff0c\u62a5\u4ef7\u540e\u63a8\u8fdb6\u5206\u949f"
       ],
-      "output": "报价虽未过期，但会员权益变化导致下单被拒绝",
+      "output": "\u62a5\u4ef7\u867d\u672a\u8fc7\u671f\uff0c\u4f46\u4f1a\u5458\u6743\u76ca\u53d8\u5316\u5bfc\u81f4\u4e0b\u5355\u88ab\u62d2\u7edd",
       "checks": [
-        "异常类型为DomainException。",
-        "消息包含“会员权益已变化”。"
+        "\u5f02\u5e38\u7c7b\u578b\u4e3aDomainException\u3002",
+        "\u6d88\u606f\u5305\u542b\u201c\u4f1a\u5458\u6743\u76ca\u5df2\u53d8\u5316\u201d\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.membership.MembershipServiceTest#unpaidPurchaseIsIdempotentAndDoesNotGrantBenefits": {
       "id": "ME-001",
-      "title": "未付款会员购买快照与幂等",
-      "level": "服务集成",
+      "title": "\u672a\u4ed8\u6b3e\u4f1a\u5458\u8d2d\u4e70\u5feb\u7167\u4e0e\u5e42\u7b49",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 只需用户，不需房源。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b \u53ea\u9700\u7528\u6237\uff0c\u4e0d\u9700\u623f\u6e90\u3002",
       "input": {
         "plan": {
           "name": "Test plan",
@@ -888,25 +888,25 @@
         "conflictingPlanId": 999999
       },
       "steps": [
-        "99元、0.85折扣系数、30天方案；新用户重复提交同一购买键"
+        "99\u5143\u30010.85\u6298\u6263\u7cfb\u6570\u300130\u5929\u65b9\u6848\uff1b\u65b0\u7528\u6237\u91cd\u590d\u63d0\u4ea4\u540c\u4e00\u8d2d\u4e70\u952e"
       ],
-      "output": "购买单 PENDING_PAYMENT，保留99.00/0.8500/30快照；相同键返回同ID；会员仍未激活",
+      "output": "\u8d2d\u4e70\u5355 PENDING_PAYMENT\uff0c\u4fdd\u755999.00/0.8500/30\u5feb\u7167\uff1b\u76f8\u540c\u952e\u8fd4\u56de\u540cID\uff1b\u4f1a\u5458\u4ecd\u672a\u6fc0\u6d3b",
       "checks": [
-        "status=PENDING_PAYMENT、fee=\"99.00\"、discountRatio=\"0.8500\"、durationDays=30。",
-        "重放ID相同；active=false且当前权益ratio=\"1.0000\"。",
-        "不同内容复用键及他人读取均拒绝。"
+        "status=PENDING_PAYMENT\u3001fee=\"99.00\"\u3001discountRatio=\"0.8500\"\u3001durationDays=30\u3002",
+        "\u91cd\u653eID\u76f8\u540c\uff1bactive=false\u4e14\u5f53\u524d\u6743\u76caratio=\"1.0000\"\u3002",
+        "\u4e0d\u540c\u5185\u5bb9\u590d\u7528\u952e\u53ca\u4ed6\u4eba\u8bfb\u53d6\u5747\u62d2\u7edd\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.membership.MembershipServiceTest#retiringPlanPreventsNewPurchasesButPreservesSnapshots": {
       "id": "ME-002",
-      "title": "停用方案与历史购买单保留",
-      "level": "服务集成",
+      "title": "\u505c\u7528\u65b9\u6848\u4e0e\u5386\u53f2\u8d2d\u4e70\u5355\u4fdd\u7559",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer",
         "Admin"
       ],
-      "fixture": "用户U与独立新方案。",
+      "fixture": "\u7528\u6237U\u4e0e\u72ec\u7acb\u65b0\u65b9\u6848\u3002",
       "input": {
         "plan": {
           "name": "Retire plan",
@@ -918,77 +918,77 @@
         "afterKey": "after-retire-key"
       },
       "steps": [
-        "先创建和购买独立方案，再停用方案，以新键重新购买"
+        "\u5148\u521b\u5efa\u548c\u8d2d\u4e70\u72ec\u7acb\u65b9\u6848\uff0c\u518d\u505c\u7528\u65b9\u6848\uff0c\u4ee5\u65b0\u952e\u91cd\u65b0\u8d2d\u4e70"
       ],
-      "output": "公开方案列表隐藏停用项；新购买被拒绝；原购买单仍保留费用快照",
+      "output": "\u516c\u5f00\u65b9\u6848\u5217\u8868\u9690\u85cf\u505c\u7528\u9879\uff1b\u65b0\u8d2d\u4e70\u88ab\u62d2\u7edd\uff1b\u539f\u8d2d\u4e70\u5355\u4ecd\u4fdd\u7559\u8d39\u7528\u5feb\u7167",
       "checks": [
-        "公开列表不含停用方案。",
-        "新购买失败，旧购买单fee仍\"88.00\"。"
+        "\u516c\u5f00\u5217\u8868\u4e0d\u542b\u505c\u7528\u65b9\u6848\u3002",
+        "\u65b0\u8d2d\u4e70\u5931\u8d25\uff0c\u65e7\u8d2d\u4e70\u5355fee\u4ecd\"88.00\"\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.mail.EmailAdapterTest#localAndRestrictedModesDoNotSendMail": {
       "id": "NO-007",
-      "title": "本地、禁用及白名单限制模式",
-      "level": "单元/SMTP替身",
+      "title": "\u672c\u5730\u3001\u7981\u7528\u53ca\u767d\u540d\u5355\u9650\u5236\u6a21\u5f0f",
+      "level": "\u5355\u5143/SMTP\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "EmailSender.Message(replyTo=null, recipient=guest@example.com, subject=subject, body=body); JavaMailSender mock.",
+      "fixture": "EmailSender.Message(replyTo=null, recipient=guest@qq.com, subject=subject, body=body); JavaMailSender mock.",
       "input": {
         "modes": [
           "log",
           "disabled",
           "smtp"
         ],
-        "emailFrom": "sender@example.com",
+        "emailFrom": "sender@qq.com",
         "allowlist": [
-          "another@example.com"
+          "another@qq.com"
         ],
-        "recipient": "guest@example.com"
+        "recipient": "guest@qq.com"
       },
       "steps": [
-        "同一邮件任务分别采用log、disabled和smtp但收件人不在允许名单的配置"
+        "\u540c\u4e00\u90ae\u4ef6\u4efb\u52a1\u5206\u522b\u91c7\u7528log\u3001disabled\u548csmtp\u4f46\u6536\u4ef6\u4eba\u4e0d\u5728\u5141\u8bb8\u540d\u5355\u7684\u914d\u7f6e"
       ],
-      "output": "依次SIMULATED、FAILED、FAILED；均不调用SMTP发送器",
+      "output": "\u4f9d\u6b21SIMULATED\u3001FAILED\u3001FAILED\uff1b\u5747\u4e0d\u8c03\u7528SMTP\u53d1\u9001\u5668",
       "checks": [
-        "依次SIMULATED、FAILED、FAILED。",
-        "verifyNoInteractions(transport)。"
+        "\u4f9d\u6b21SIMULATED\u3001FAILED\u3001FAILED\u3002",
+        "verifyNoInteractions(transport)\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.mail.EmailAdapterTest#smtpOutcomesDistinguishAcceptanceRetryAndUncertainty": {
       "id": "NO-008",
-      "title": "SMTP 接受、可重试与未知结果区分",
-      "level": "单元/SMTP替身",
+      "title": "SMTP \u63a5\u53d7\u3001\u53ef\u91cd\u8bd5\u4e0e\u672a\u77e5\u7ed3\u679c\u533a\u5206",
+      "level": "\u5355\u5143/SMTP\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "EmailSender.Message(replyTo=null, recipient=guest@example.com, subject=subject, body=body); JavaMailSender mock.",
+      "fixture": "EmailSender.Message(replyTo=null, recipient=guest@qq.com, subject=subject, body=body); JavaMailSender mock.",
       "input": {
         "transportBehaviors": [
-          "正常返回",
+          "\u6b63\u5e38\u8fd4\u56de",
           "MailAuthenticationException(test)",
           "MailSendException(test)"
         ]
       },
       "steps": [
-        "SMTP发送器依次正常返回、抛认证失败、抛发送结果未知异常"
+        "SMTP\u53d1\u9001\u5668\u4f9d\u6b21\u6b63\u5e38\u8fd4\u56de\u3001\u629b\u8ba4\u8bc1\u5931\u8d25\u3001\u629b\u53d1\u9001\u7ed3\u679c\u672a\u77e5\u5f02\u5e38"
       ],
-      "output": "依次SENT、RETRY、UNKNOWN；SENT只代表SMTP接受，不代表最终收件",
+      "output": "\u4f9d\u6b21SENT\u3001FAILED\u3001UNKNOWN\uff1bSENT\u53ea\u4ee3\u8868SMTP\u63a5\u53d7\uff0c\u4e0d\u4ee3\u8868\u6700\u7ec8\u6536\u4ef6",
       "checks": [
-        "outcome依次SENT、RETRY、UNKNOWN。"
+        "outcome\u4f9d\u6b21SENT\u3001FAILED\u3001UNKNOWN\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.notification.NotificationDeliveryTest#retriesUseBoundedBackoffAndStopAfterFourAttempts": {
       "id": "NO-001",
-      "title": "通知有限退避重试",
-      "level": "服务集成/发送器替身",
+      "title": "\u901a\u77e5\u6709\u9650\u9000\u907f\u91cd\u8bd5",
+      "level": "\u670d\u52a1\u96c6\u6210/\u53d1\u9001\u5668\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "F-Notification；只剩当前fixture的可投递任务。",
+      "fixture": "F-Notification\uff1b\u53ea\u5269\u5f53\u524dfixture\u7684\u53ef\u6295\u9012\u4efb\u52a1\u3002",
       "input": {
         "sender": {
           "outcome": "RETRY",
@@ -1001,25 +1001,25 @@
         ]
       },
       "steps": [
-        "发送器连续RETRY；推进1、5、30分钟"
+        "\u53d1\u9001\u5668\u8fde\u7eedRETRY\uff1b\u63a8\u8fdb1\u30015\u300130\u5206\u949f"
       ],
-      "output": "立即重复调度不重发；总4次后FAILED",
+      "output": "\u7acb\u5373\u91cd\u590d\u8c03\u5ea6\u4e0d\u91cd\u53d1\uff1b\u603b4\u6b21\u540eFAILED",
       "checks": [
-        "首次state=RETRY。",
-        "立即重调度sender.send累计1次。",
-        "最终state=FAILED且sender.send累计4次。"
+        "\u9996\u6b21state=RETRY\u3002",
+        "\u7acb\u5373\u91cd\u8c03\u5ea6sender.send\u7d2f\u8ba11\u6b21\u3002",
+        "\u6700\u7ec8state=FAILED\u4e14sender.send\u7d2f\u8ba14\u6b21\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.notification.NotificationDeliveryTest#uncertainDeliveryRequiresExplicitAcknowledgementBeforeRetry": {
       "id": "NO-002",
-      "title": "未知投递结果必须人工确认重试",
-      "level": "服务集成/发送器替身",
+      "title": "\u672a\u77e5\u6295\u9012\u7ed3\u679c\u5fc5\u987b\u4eba\u5de5\u786e\u8ba4\u91cd\u8bd5",
+      "level": "\u670d\u52a1\u96c6\u6210/\u53d1\u9001\u5668\u66ff\u8eab",
       "roles": [
         "Staff",
         "Admin"
       ],
-      "fixture": "F-Notification。",
+      "fixture": "F-Notification\u3002",
       "input": {
         "firstSender": {
           "outcome": "UNKNOWN",
@@ -1036,24 +1036,24 @@
         }
       },
       "steps": [
-        "发送结果UNKNOWN，推进1小时，人工分别不确认/确认重试"
+        "\u53d1\u9001\u7ed3\u679cUNKNOWN\uff0c\u63a8\u8fdb1\u5c0f\u65f6\uff0c\u4eba\u5de5\u5206\u522b\u4e0d\u786e\u8ba4/\u786e\u8ba4\u91cd\u8bd5"
       ],
-      "output": "UNKNOWN不自动重发；未确认重试拒绝；确认重试后可SENT",
+      "output": "UNKNOWN\u4e0d\u81ea\u52a8\u91cd\u53d1\uff1b\u672a\u786e\u8ba4\u91cd\u8bd5\u62d2\u7edd\uff1b\u786e\u8ba4\u91cd\u8bd5\u540e\u53efSENT",
       "checks": [
-        "UNKNOWN不自动重发，send累计1次。",
-        "false重试抛DomainException。",
-        "true重试并发送后state=SENT。"
+        "UNKNOWN\u4e0d\u81ea\u52a8\u91cd\u53d1\uff0csend\u7d2f\u8ba11\u6b21\u3002",
+        "false\u91cd\u8bd5\u629bDomainException\u3002",
+        "true\u91cd\u8bd5\u5e76\u53d1\u9001\u540estate=SENT\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.notification.NotificationDeliveryTest#expiredWorkerLeaseIsNotAutomaticallyResent": {
       "id": "NO-003",
-      "title": "工作进程租约过期不自动重发",
-      "level": "服务集成/发送器替身",
+      "title": "\u5de5\u4f5c\u8fdb\u7a0b\u79df\u7ea6\u8fc7\u671f\u4e0d\u81ea\u52a8\u91cd\u53d1",
+      "level": "\u670d\u52a1\u96c6\u6210/\u53d1\u9001\u5668\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "F-Notification。",
+      "fixture": "F-Notification\u3002",
       "input": {
         "taskUpdate": {
           "state": "SENDING",
@@ -1062,46 +1062,46 @@
         }
       },
       "steps": [
-        "任务SENDING且租约已过期"
+        "\u4efb\u52a1SENDING\u4e14\u79df\u7ea6\u5df2\u8fc7\u671f"
       ],
-      "output": "转UNKNOWN，不调用发送器",
+      "output": "\u8f6cUNKNOWN\uff0c\u4e0d\u8c03\u7528\u53d1\u9001\u5668",
       "checks": [
-        "state=UNKNOWN。",
-        "verifyNoInteractions(sender)。"
+        "state=UNKNOWN\u3002",
+        "verifyNoInteractions(sender)\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.notification.NotificationDeliveryTest#reminderIsSkippedAfterArrivalInsteadOfSendingStaleMail": {
       "id": "NO-004",
-      "title": "已过入住时间的提醒跳过",
-      "level": "服务集成/发送器替身",
+      "title": "\u5df2\u8fc7\u5165\u4f4f\u65f6\u95f4\u7684\u63d0\u9192\u8df3\u8fc7",
+      "level": "\u670d\u52a1\u96c6\u6210/\u53d1\u9001\u5668\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "F-Notification。",
+      "fixture": "F-Notification\u3002",
       "input": {
         "confirmationState": "SENT",
         "advanceDays": 20,
         "now": "2026-11-11T00:00:00Z"
       },
       "steps": [
-        "确认邮件已发送，时钟推进20天到入住之后"
+        "\u786e\u8ba4\u90ae\u4ef6\u5df2\u53d1\u9001\uff0c\u65f6\u949f\u63a8\u8fdb20\u5929\u5230\u5165\u4f4f\u4e4b\u540e"
       ],
-      "output": "D1为SKIPPED，不调用发送器",
+      "output": "D1\u4e3aSKIPPED\uff0c\u4e0d\u8c03\u7528\u53d1\u9001\u5668",
       "checks": [
-        "D1 state=SKIPPED。",
-        "发送器无调用。"
+        "D1 state=SKIPPED\u3002",
+        "\u53d1\u9001\u5668\u65e0\u8c03\u7528\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.notification.NotificationDeliveryTest#dailyQuotaDefersDeliveryWithoutConsumingAnAttempt": {
       "id": "NO-005",
-      "title": "发送配额耗尽时推迟且不计尝试",
-      "level": "服务集成/发送器替身",
+      "title": "\u53d1\u9001\u914d\u989d\u8017\u5c3d\u65f6\u63a8\u8fdf\u4e14\u4e0d\u8ba1\u5c1d\u8bd5",
+      "level": "\u670d\u52a1\u96c6\u6210/\u53d1\u9001\u5668\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "F-Notification；dailyLimit默认50。",
+      "fixture": "F-Notification\uff1bdailyLimit\u9ed8\u8ba450\u3002",
       "input": {
         "quota": {
           "id": 1,
@@ -1114,19 +1114,19 @@
         }
       },
       "steps": [
-        "当天发送配额已使用50次，再调度一个待发送确认任务"
+        "\u5f53\u5929\u53d1\u9001\u914d\u989d\u5df2\u4f7f\u752850\u6b21\uff0c\u518d\u8c03\u5ea6\u4e00\u4e2a\u5f85\u53d1\u9001\u786e\u8ba4\u4efb\u52a1"
       ],
-      "output": "任务保持READY且attempts=0；不调用发送器；后台列表可查该任务",
+      "output": "\u4efb\u52a1\u4fdd\u6301READY\u4e14attempts=0\uff1b\u4e0d\u8c03\u7528\u53d1\u9001\u5668\uff1b\u540e\u53f0\u5217\u8868\u53ef\u67e5\u8be5\u4efb\u52a1",
       "checks": [
-        "state=READY，attempts=0。",
-        "发送器无调用。"
+        "state=READY\uff0cattempts=0\u3002",
+        "\u53d1\u9001\u5668\u65e0\u8c03\u7528\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.notification.NotificationDeliveryTest#schedulesDistinctD3AndD1AtHotelLocalTime": {
       "id": "NO-009",
-      "title": "D3/D1调度与重复配置去重",
-      "level": "模块",
+      "title": "D3/D1\u8c03\u5ea6\u4e0e\u91cd\u590d\u914d\u7f6e\u53bb\u91cd",
+      "level": "\u6a21\u5757",
       "roles": [
         "System"
       ],
@@ -1144,18 +1144,18 @@
         "reminderTime": "09:00"
       },
       "steps": [
-        "reminderDays=[3,1,3]；入住2026-11-10；创建时间2026-10-22T00:00:00Z"
+        "reminderDays=[3,1,3]\uff1b\u5165\u4f4f2026-11-10\uff1b\u521b\u5efa\u65f6\u95f42026-10-22T00:00:00Z"
       ],
-      "output": "只生成CONFIRMATION、REMINDER_D3、REMINDER_D1各一项；提醒分别在11月7日和9日北京时间09:00",
+      "output": "\u53ea\u751f\u6210CONFIRMATION\u3001REMINDER_D3\u3001REMINDER_D1\u5404\u4e00\u9879\uff1b\u63d0\u9192\u5206\u522b\u572811\u67087\u65e5\u548c9\u65e5\u5317\u4eac\u65f6\u95f409:00",
       "checks": [
-        "只生成CONFIRMATION、REMINDER_D3、REMINDER_D1各一项；提醒分别在11月7日和9日北京时间09:00"
+        "\u53ea\u751f\u6210CONFIRMATION\u3001REMINDER_D3\u3001REMINDER_D1\u5404\u4e00\u9879\uff1b\u63d0\u9192\u5206\u522b\u572811\u67087\u65e5\u548c9\u65e5\u5317\u4eac\u65f6\u95f409:00"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.notification.NotificationDeliveryTest#missedRemindersAreSkippedButExactDueTimeRemainsEligible": {
       "id": "NO-010",
-      "title": "错过提醒与精确时点边界",
-      "level": "模块",
+      "title": "\u9519\u8fc7\u63d0\u9192\u4e0e\u7cbe\u786e\u65f6\u70b9\u8fb9\u754c",
+      "level": "\u6a21\u5757",
       "roles": [
         "System"
       ],
@@ -1173,22 +1173,22 @@
         "zone": "Asia/Shanghai"
       },
       "steps": [
-        "reminderDays=[3,1]；入住2026-11-10；分别在11月9日09:00与09:00:01北京时间创建提醒"
+        "reminderDays=[3,1]\uff1b\u5165\u4f4f2026-11-10\uff1b\u5206\u522b\u572811\u67089\u65e509:00\u4e0e09:00:01\u5317\u4eac\u65f6\u95f4\u521b\u5efa\u63d0\u9192"
       ],
-      "output": "09:00时D3=SKIPPED且D1=READY；09:00:01时两项提醒均SKIPPED；确认邮件仍READY",
+      "output": "09:00\u65f6D3=SKIPPED\u4e14D1=READY\uff1b09:00:01\u65f6\u4e24\u9879\u63d0\u9192\u5747SKIPPED\uff1b\u786e\u8ba4\u90ae\u4ef6\u4ecdREADY",
       "checks": [
-        "09:00时D3=SKIPPED且D1=READY；09:00:01时两项提醒均SKIPPED；确认邮件仍READY"
+        "09:00\u65f6D3=SKIPPED\u4e14D1=READY\uff1b09:00:01\u65f6\u4e24\u9879\u63d0\u9192\u5747SKIPPED\uff1b\u786e\u8ba4\u90ae\u4ef6\u4ecdREADY"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.notification.NotificationDeliveryTest#sameDayArrivalSkipsPriorDayReminder": {
       "id": "NO-006",
-      "title": "入住当日创建任务跳过前日提醒",
-      "level": "服务集成/事务",
+      "title": "\u5165\u4f4f\u5f53\u65e5\u521b\u5efa\u4efb\u52a1\u8df3\u8fc7\u524d\u65e5\u63d0\u9192",
+      "level": "\u670d\u52a1\u96c6\u6210/\u4e8b\u52a1",
       "roles": [
         "System"
       ],
-      "fixture": "F-Notification；预订revision=1真实存在。",
+      "fixture": "F-Notification\uff1b\u9884\u8ba2revision=1\u771f\u5b9e\u5b58\u5728\u3002",
       "input": {
         "advanceDays": 19,
         "now": "2026-11-10T00:00:00Z",
@@ -1203,47 +1203,47 @@
         }
       },
       "steps": [
-        "酒店入住当天08:00，为已存在的预订版本重新生成通知任务（先清理本用例任务）"
+        "\u9152\u5e97\u5165\u4f4f\u5f53\u592908:00\uff0c\u4e3a\u5df2\u5b58\u5728\u7684\u9884\u8ba2\u7248\u672c\u91cd\u65b0\u751f\u6210\u901a\u77e5\u4efb\u52a1\uff08\u5148\u6e05\u7406\u672c\u7528\u4f8b\u4efb\u52a1\uff09"
       ],
-      "output": "确认任务READY，D1提醒SKIPPED，不补发前一天提醒",
+      "output": "\u786e\u8ba4\u4efb\u52a1READY\uff0cD1\u63d0\u9192SKIPPED\uff0c\u4e0d\u8865\u53d1\u524d\u4e00\u5929\u63d0\u9192",
       "checks": [
-        "REMINDER_D1=SKIPPED。",
-        "CONFIRMATION=READY。"
+        "REMINDER_D1=SKIPPED\u3002",
+        "CONFIRMATION=READY\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.AlipaySignatureTest#validCallbackVerifiesAndParsesChinaTime": {
       "id": "PA-009",
-      "title": "有效 RSA2 回调与北京时间解析",
-      "level": "单元/真实本地加密",
+      "title": "\u6709\u6548 RSA2 \u56de\u8c03\u4e0e\u5317\u4eac\u65f6\u95f4\u89e3\u6790",
+      "level": "\u5355\u5143/\u771f\u5b9e\u672c\u5730\u52a0\u5bc6",
       "roles": [
         "System"
       ],
-      "fixture": "F-Signature，使用本次生成RSA2048密钥。",
+      "fixture": "F-Signature\uff0c\u4f7f\u7528\u672c\u6b21\u751f\u6210RSA2048\u5bc6\u94a5\u3002",
       "input": {
-        "fixture": "F-Signature完整map",
+        "fixture": "F-Signature\u5b8c\u6574map",
         "total_amount": "100.00",
         "gmt_payment": "2026-10-22 08:00:00"
       },
       "steps": [
-        "本地RSA2签名、金额100、商户正确、北京时间2026-10-22 08:00"
+        "\u672c\u5730RSA2\u7b7e\u540d\u3001\u91d1\u989d100\u3001\u5546\u6237\u6b63\u786e\u3001\u5317\u4eac\u65f6\u95f42026-10-22 08:00"
       ],
-      "output": "结果PAID、金额100.00、时间2026-10-22T00:00:00Z",
+      "output": "\u7ed3\u679cPAID\u3001\u91d1\u989d100.00\u3001\u65f6\u95f42026-10-22T00:00:00Z",
       "checks": [
-        "state=PAID。",
-        "amount数值100.00。",
-        "paidAt=2026-10-22T00:00:00Z。"
+        "state=PAID\u3002",
+        "amount\u6570\u503c100.00\u3002",
+        "paidAt=2026-10-22T00:00:00Z\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.AlipaySignatureTest#alteredAmountFailsSignatureVerification": {
       "id": "PA-010",
-      "title": "签名后金额篡改拒绝",
-      "level": "单元/真实本地加密",
+      "title": "\u7b7e\u540d\u540e\u91d1\u989d\u7be1\u6539\u62d2\u7edd",
+      "level": "\u5355\u5143/\u771f\u5b9e\u672c\u5730\u52a0\u5bc6",
       "roles": [
         "System"
       ],
-      "fixture": "F-Signature合法签名map。",
+      "fixture": "F-Signature\u5408\u6cd5\u7b7e\u540dmap\u3002",
       "input": {
         "mutation": {
           "total_amount": "0.01"
@@ -1251,22 +1251,22 @@
         "resign": false
       },
       "steps": [
-        "签名后将100改为0.01但不重新签名"
+        "\u7b7e\u540d\u540e\u5c06100\u6539\u4e3a0.01\u4f46\u4e0d\u91cd\u65b0\u7b7e\u540d"
       ],
-      "output": "验签拒绝",
+      "output": "\u9a8c\u7b7e\u62d2\u7edd",
       "checks": [
-        "验签调用抛DomainException。"
+        "\u9a8c\u7b7e\u8c03\u7528\u629bDomainException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.AlipaySignatureTest#evenSignedCallbackMustBelongToConfiguredMerchant": {
       "id": "PA-011",
-      "title": "有效签名下的商户身份校验",
-      "level": "单元/真实本地加密",
+      "title": "\u6709\u6548\u7b7e\u540d\u4e0b\u7684\u5546\u6237\u8eab\u4efd\u6821\u9a8c",
+      "level": "\u5355\u5143/\u771f\u5b9e\u672c\u5730\u52a0\u5bc6",
       "roles": [
         "System"
       ],
-      "fixture": "配置sellerId=test-seller。",
+      "fixture": "\u914d\u7f6esellerId=test-seller\u3002",
       "input": {
         "mutation": {
           "seller_id": "another-seller"
@@ -1274,22 +1274,22 @@
         "resign": true
       },
       "steps": [
-        "错误seller_id但签名有效"
+        "\u9519\u8befseller_id\u4f46\u7b7e\u540d\u6709\u6548"
       ],
-      "output": "拒绝不属于本商户的回调",
+      "output": "\u62d2\u7edd\u4e0d\u5c5e\u4e8e\u672c\u5546\u6237\u7684\u56de\u8c03",
       "checks": [
-        "即使签名有效也拒绝非配置商户。"
+        "\u5373\u4f7f\u7b7e\u540d\u6709\u6548\u4e5f\u62d2\u7edd\u975e\u914d\u7f6e\u5546\u6237\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.AlipaySignatureTest#missingFieldsAndMalformedDatesAreControlledErrors": {
       "id": "PA-012",
-      "title": "空回调与非法付款时间拒绝",
-      "level": "单元/真实本地加密",
+      "title": "\u7a7a\u56de\u8c03\u4e0e\u975e\u6cd5\u4ed8\u6b3e\u65f6\u95f4\u62d2\u7edd",
+      "level": "\u5355\u5143/\u771f\u5b9e\u672c\u5730\u52a0\u5bc6",
       "roles": [
         "System"
       ],
-      "fixture": "F-Signature。",
+      "fixture": "F-Signature\u3002",
       "input": {
         "firstMap": {},
         "secondMutation": {
@@ -1298,45 +1298,45 @@
         "resign": true
       },
       "steps": [
-        "空回调；有效签名但付款时间not-a-date"
+        "\u7a7a\u56de\u8c03\uff1b\u6709\u6548\u7b7e\u540d\u4f46\u4ed8\u6b3e\u65f6\u95f4not-a-date"
       ],
-      "output": "两者均为可控DomainException，不确认支付",
+      "output": "\u4e24\u8005\u5747\u4e3a\u53ef\u63a7DomainException\uff0c\u4e0d\u786e\u8ba4\u652f\u4ed8",
       "checks": [
-        "空参数与坏时间均被可控业务异常拒绝。"
+        "\u7a7a\u53c2\u6570\u4e0e\u574f\u65f6\u95f4\u5747\u88ab\u53ef\u63a7\u4e1a\u52a1\u5f02\u5e38\u62d2\u7edd\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.PaymentFlowTest#unpaidExpiryReleasesAllHeldNights": {
       "id": "PA-002",
-      "title": "无支付尝试的预订到期释放",
-      "level": "服务集成",
+      "title": "\u65e0\u652f\u4ed8\u5c1d\u8bd5\u7684\u9884\u8ba2\u5230\u671f\u91ca\u653e",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 1间房，尚未创建支付尝试。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b 1\u95f4\u623f\uff0c\u5c1a\u672a\u521b\u5efa\u652f\u4ed8\u5c1d\u8bd5\u3002",
       "input": {
         "key": "expiry-booking-key",
         "advanceMinutes": 16,
         "operation": "payments.reconcile($P)"
       },
       "steps": [
-        "待付预订后推进时钟16分钟，执行未付单恢复"
+        "\u5f85\u4ed8\u9884\u8ba2\u540e\u63a8\u8fdb\u65f6\u949f16\u5206\u949f\uff0c\u6267\u884c\u672a\u4ed8\u5355\u6062\u590d"
       ],
-      "output": "预订EXPIRED，占房夜数0",
+      "output": "\u9884\u8ba2EXPIRED\uff0c\u5360\u623f\u591c\u65700",
       "checks": [
-        "booking.status=EXPIRED。",
-        "按booking_id过滤room_night count=0。"
+        "booking.status=EXPIRED\u3002",
+        "\u6309booking_id\u8fc7\u6ee4room_night count=0\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.PaymentFlowTest#paymentRetryIsIdempotentAndDifferentAttemptIsBlocked": {
       "id": "PA-003",
-      "title": "支付尝试重放与多尝试冲突",
-      "level": "服务集成",
+      "title": "\u652f\u4ed8\u5c1d\u8bd5\u91cd\u653e\u4e0e\u591a\u5c1d\u8bd5\u51b2\u7a81",
+      "level": "\u670d\u52a1\u96c6\u6210",
       "roles": [
         "Customer"
       ],
-      "fixture": "公共数据； 1间房，key=attempt-booking-key。",
+      "fixture": "\u516c\u5171\u6570\u636e\uff1b 1\u95f4\u623f\uff0ckey=attempt-booking-key\u3002",
       "input": {
         "start": {
           "amount": "200.10",
@@ -1354,24 +1354,24 @@
         }
       },
       "steps": [
-        "同一支付尝试键重试，再尝试另一方式及错误金额"
+        "\u540c\u4e00\u652f\u4ed8\u5c1d\u8bd5\u952e\u91cd\u8bd5\uff0c\u518d\u5c1d\u8bd5\u53e6\u4e00\u65b9\u5f0f\u53ca\u9519\u8bef\u91d1\u989d"
       ],
-      "output": "未决尝试仅1条；另一尝试被拒绝；错误金额抛异常",
+      "output": "\u672a\u51b3\u5c1d\u8bd5\u4ec51\u6761\uff1b\u53e6\u4e00\u5c1d\u8bd5\u88ab\u62d2\u7edd\uff1b\u9519\u8bef\u91d1\u989d\u629b\u5f02\u5e38",
       "checks": [
-        "同键重试attempts.size=1。",
-        "另一个未决尝试被DomainException拒绝。",
-        "错误金额抛IllegalArgumentException（包括其子类）。"
+        "\u540c\u952e\u91cd\u8bd5attempts.size=1\u3002",
+        "\u53e6\u4e00\u4e2a\u672a\u51b3\u5c1d\u8bd5\u88abDomainException\u62d2\u7edd\u3002",
+        "\u9519\u8bef\u91d1\u989d\u629bIllegalArgumentException\uff08\u5305\u62ec\u5176\u5b50\u7c7b\uff09\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.PaymentRecoveryTest#unknownExpiredPaymentKeepsInventoryUntilTheProviderConfirmsClosure": {
       "id": "PA-004",
-      "title": "未知支付结果保留库存直至确认关闭",
-      "level": "服务集成/渠道替身",
+      "title": "\u672a\u77e5\u652f\u4ed8\u7ed3\u679c\u4fdd\u7559\u5e93\u5b58\u76f4\u81f3\u786e\u8ba4\u5173\u95ed",
+      "level": "\u670d\u52a1\u96c6\u6210/\u6e20\u9053\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "F-Recovery。",
+      "fixture": "F-Recovery\u3002",
       "input": {
         "advanceMinutes": 16,
         "first": {
@@ -1384,23 +1384,23 @@
         }
       },
       "steps": [
-        "超过15分钟后渠道UNKNOWN；随后确认CLOSED"
+        "\u8d85\u8fc715\u5206\u949f\u540e\u6e20\u9053UNKNOWN\uff1b\u968f\u540e\u786e\u8ba4CLOSED"
       ],
-      "output": "未知时保留占房，确认关闭后释放并EXPIRED",
+      "output": "\u672a\u77e5\u65f6\u4fdd\u7559\u5360\u623f\uff0c\u786e\u8ba4\u5173\u95ed\u540e\u91ca\u653e\u5e76EXPIRED",
       "checks": [
-        "第一阶段HELD夜数=2、应付单status=PENDING。",
-        "第二阶段HELD夜数=0、booking.status=EXPIRED。"
+        "\u7b2c\u4e00\u9636\u6bb5HELD\u591c\u6570=2\u3001\u5e94\u4ed8\u5355status=PENDING\u3002",
+        "\u7b2c\u4e8c\u9636\u6bb5HELD\u591c\u6570=0\u3001booking.status=EXPIRED\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.PaymentRecoveryTest#delayedVerifiedPaymentUsesTheActualPaidTimeAndIsIdempotent": {
       "id": "PA-005",
-      "title": "迟到回调按真实付款时间确认且幂等",
-      "level": "服务集成/渠道替身",
+      "title": "\u8fdf\u5230\u56de\u8c03\u6309\u771f\u5b9e\u4ed8\u6b3e\u65f6\u95f4\u786e\u8ba4\u4e14\u5e42\u7b49",
+      "level": "\u670d\u52a1\u96c6\u6210/\u6e20\u9053\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "F-Recovery；A为原支付尝试。",
+      "fixture": "F-Recovery\uff1bA\u4e3a\u539f\u652f\u4ed8\u5c1d\u8bd5\u3002",
       "input": {
         "callbackMap": {
           "signed": "fixture"
@@ -1417,23 +1417,23 @@
         "repeats": 2
       },
       "steps": [
-        "真实支付时间在截止前，回调在16分钟后到达并重复通知"
+        "\u771f\u5b9e\u652f\u4ed8\u65f6\u95f4\u5728\u622a\u6b62\u524d\uff0c\u56de\u8c03\u572816\u5206\u949f\u540e\u5230\u8fbe\u5e76\u91cd\u590d\u901a\u77e5"
       ],
-      "output": "预订CONFIRMED；通知仅2条，不重复生成",
+      "output": "\u9884\u8ba2CONFIRMED\uff1b\u901a\u77e5\u4ec52\u6761\uff0c\u4e0d\u91cd\u590d\u751f\u6210",
       "checks": [
-        "booking.status=CONFIRMED。",
-        "按booking_id查notification_task count=2。"
+        "booking.status=CONFIRMED\u3002",
+        "\u6309booking_id\u67e5notification_task count=2\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.PaymentRecoveryTest#mismatchedIncomingFundsAreRecordedWithoutConfirmingBooking": {
       "id": "PA-006",
-      "title": "不符金额登记异常而不确认预订",
-      "level": "服务集成/渠道替身",
+      "title": "\u4e0d\u7b26\u91d1\u989d\u767b\u8bb0\u5f02\u5e38\u800c\u4e0d\u786e\u8ba4\u9884\u8ba2",
+      "level": "\u670d\u52a1\u96c6\u6210/\u6e20\u9053\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "F-Recovery，应付200.00。",
+      "fixture": "F-Recovery\uff0c\u5e94\u4ed8200.00\u3002",
       "input": {
         "callbackMap": {
           "signed": "fixture"
@@ -1446,23 +1446,23 @@
         }
       },
       "steps": [
-        "应付200元的单收到签名渠道0.01元入账"
+        "\u5e94\u4ed8200\u5143\u7684\u5355\u6536\u5230\u7b7e\u540d\u6e20\u90530.01\u5143\u5165\u8d26"
       ],
-      "output": "预订PENDING_PAYMENT；记录AMOUNT_MISMATCH和实际金额0.01",
+      "output": "\u9884\u8ba2PENDING_PAYMENT\uff1b\u8bb0\u5f55AMOUNT_MISMATCH\u548c\u5b9e\u9645\u91d1\u989d0.01",
       "checks": [
-        "booking.status=PENDING_PAYMENT。",
-        "reason=AMOUNT_MISMATCH，received_amount数值=0.01。"
+        "booking.status=PENDING_PAYMENT\u3002",
+        "reason=AMOUNT_MISMATCH\uff0creceived_amount\u6570\u503c=0.01\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.PaymentRecoveryTest#latePaymentCannotReopenAnExpiredBooking": {
       "id": "PA-007",
-      "title": "已关闭预订拒绝迟到付款重开",
-      "level": "服务集成/渠道替身",
+      "title": "\u5df2\u5173\u95ed\u9884\u8ba2\u62d2\u7edd\u8fdf\u5230\u4ed8\u6b3e\u91cd\u5f00",
+      "level": "\u670d\u52a1\u96c6\u6210/\u6e20\u9053\u66ff\u8eab",
       "roles": [
         "System"
       ],
-      "fixture": "F-Recovery。",
+      "fixture": "F-Recovery\u3002",
       "input": {
         "advanceMinutes": 16,
         "queryResult": "CLOSED",
@@ -1473,23 +1473,23 @@
         }
       },
       "steps": [
-        "先关闭过期单并释放库存，再收到迟到付款"
+        "\u5148\u5173\u95ed\u8fc7\u671f\u5355\u5e76\u91ca\u653e\u5e93\u5b58\uff0c\u518d\u6536\u5230\u8fdf\u5230\u4ed8\u6b3e"
       ],
-      "output": "预订仍EXPIRED，库存0，异常LATE_PAYMENT",
+      "output": "\u9884\u8ba2\u4ecdEXPIRED\uff0c\u5e93\u5b580\uff0c\u5f02\u5e38LATE_PAYMENT",
       "checks": [
-        "booking.status仍EXPIRED。",
-        "HELD库存夜数0；异常reason=LATE_PAYMENT。"
+        "booking.status\u4ecdEXPIRED\u3002",
+        "HELD\u5e93\u5b58\u591c\u65700\uff1b\u5f02\u5e38reason=LATE_PAYMENT\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.PaymentRecoveryTest#reviewRecordsAdministrativeDecisionWithoutConfirmingBooking": {
       "id": "PA-008",
-      "title": "人工复核仅记账不强制确认",
-      "level": "服务集成/渠道替身",
+      "title": "\u4eba\u5de5\u590d\u6838\u4ec5\u8bb0\u8d26\u4e0d\u5f3a\u5236\u786e\u8ba4",
+      "level": "\u670d\u52a1\u96c6\u6210/\u6e20\u9053\u66ff\u8eab",
       "roles": [
         "Admin"
       ],
-      "fixture": "F-Recovery；先生成0.01与200.00不符的异常。",
+      "fixture": "F-Recovery\uff1b\u5148\u751f\u62100.01\u4e0e200.00\u4e0d\u7b26\u7684\u5f02\u5e38\u3002",
       "input": {
         "receivedAmount": "0.01",
         "list": {
@@ -1498,27 +1498,27 @@
         },
         "note": "Manual investigation; no refund requested",
         "actor": "$U",
-        "exceptionId": "$按A.id查询所得异常ID"
+        "exceptionId": "$\u6309A.id\u67e5\u8be2\u6240\u5f97\u5f02\u5e38ID"
       },
       "steps": [
-        "模拟收到0.01而应付200.00的回调，管理员查询异常并写入复核说明"
+        "\u6a21\u62df\u6536\u52300.01\u800c\u5e94\u4ed8200.00\u7684\u56de\u8c03\uff0c\u7ba1\u7406\u5458\u67e5\u8be2\u5f02\u5e38\u5e76\u5199\u5165\u590d\u6838\u8bf4\u660e"
       ],
-      "output": "异常记录可查询并记为REVIEWED；预订仍PENDING_PAYMENT；不发生退款或强制确认",
+      "output": "\u5f02\u5e38\u8bb0\u5f55\u53ef\u67e5\u8be2\u5e76\u8bb0\u4e3aREVIEWED\uff1b\u9884\u8ba2\u4ecdPENDING_PAYMENT\uff1b\u4e0d\u53d1\u751f\u9000\u6b3e\u6216\u5f3a\u5236\u786e\u8ba4",
       "checks": [
-        "异常列表包含目标ID（ID按字符串转long）。",
-        "payment_exception.status=REVIEWED。",
-        "预订仍PENDING_PAYMENT。"
+        "\u5f02\u5e38\u5217\u8868\u5305\u542b\u76ee\u6807ID\uff08ID\u6309\u5b57\u7b26\u4e32\u8f6clong\uff09\u3002",
+        "payment_exception.status=REVIEWED\u3002",
+        "\u9884\u8ba2\u4ecdPENDING_PAYMENT\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.payment.PaymentRulesTest#paymentMustMatchTrustedAmountAndExactMethod": {
       "id": "PA-001",
-      "title": "可信支付金额及支付方式精确校验",
-      "level": "单元",
+      "title": "\u53ef\u4fe1\u652f\u4ed8\u91d1\u989d\u53ca\u652f\u4ed8\u65b9\u5f0f\u7cbe\u786e\u6821\u9a8c",
+      "level": "\u5355\u5143",
       "roles": [
         "System"
       ],
-      "fixture": "PaymentValidator；无需渠道或数据库。",
+      "fixture": "PaymentValidator\uff1b\u65e0\u9700\u6e20\u9053\u6216\u6570\u636e\u5e93\u3002",
       "input": {
         "valid": [
           {
@@ -1548,24 +1548,24 @@
         "invalidTrustedAmount": "1.00"
       },
       "steps": [
-        "合法Alipay/Wechat及非法大小写、cash、空方式；不匹配或非法金额"
+        "\u5408\u6cd5Alipay/Wechat\u53ca\u975e\u6cd5\u5927\u5c0f\u5199\u3001cash\u3001\u7a7a\u65b9\u5f0f\uff1b\u4e0d\u5339\u914d\u6216\u975e\u6cd5\u91d1\u989d"
       ],
-      "output": "合法请求接受；非法方式UnsupportedPaymentMethodException；非法金额PaymentAmountMismatchException",
+      "output": "\u5408\u6cd5\u8bf7\u6c42\u63a5\u53d7\uff1b\u975e\u6cd5\u65b9\u5f0fUnsupportedPaymentMethodException\uff1b\u975e\u6cd5\u91d1\u989dPaymentAmountMismatchException",
       "checks": [
-        "合法组合不抛异常。",
-        "5种方式各抛UnsupportedPaymentMethodException。",
-        "4种金额各抛PaymentAmountMismatchException。"
+        "\u5408\u6cd5\u7ec4\u5408\u4e0d\u629b\u5f02\u5e38\u3002",
+        "5\u79cd\u65b9\u5f0f\u5404\u629bUnsupportedPaymentMethodException\u3002",
+        "4\u79cd\u91d1\u989d\u5404\u629bPaymentAmountMismatchException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.shared.BackendApplicationTests#contextLoads": {
       "id": "SH-003",
-      "title": "测试配置下的 Spring 容器装配",
-      "level": "Spring上下文",
+      "title": "\u6d4b\u8bd5\u914d\u7f6e\u4e0b\u7684 Spring \u5bb9\u5668\u88c5\u914d",
+      "level": "Spring\u4e0a\u4e0b\u6587",
       "roles": [
         "System"
       ],
-      "fixture": "application-test.properties；隔离Docker MySQL 8.4；Flyway。",
+      "fixture": "application-test.properties\uff1b\u9694\u79bbDocker MySQL 8.4\uff1bFlyway\u3002",
       "input": {
         "profile": "test",
         "requiredBeans": [
@@ -1574,23 +1574,23 @@
         ]
       },
       "steps": [
-        "启动test profile，执行Flyway并装配Spring容器"
+        "\u542f\u52a8test profile\uff0c\u6267\u884cFlyway\u5e76\u88c5\u914dSpring\u5bb9\u5668"
       ],
-      "output": "数据源和预订服务Bean存在，应用上下文成功启动",
+      "output": "\u6570\u636e\u6e90\u548c\u9884\u8ba2\u670d\u52a1Bean\u5b58\u5728\uff0c\u5e94\u7528\u4e0a\u4e0b\u6587\u6210\u529f\u542f\u52a8",
       "checks": [
-        "上下文启动未失败。",
-        "所需Bean存在。"
+        "\u4e0a\u4e0b\u6587\u542f\u52a8\u672a\u5931\u8d25\u3002",
+        "\u6240\u9700Bean\u5b58\u5728\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.shared.DomainRulesTest#roundsEachNightBeforeSumming": {
       "id": "SH-001",
-      "title": "金额精度与逐晚折扣舍入",
-      "level": "单元",
+      "title": "\u91d1\u989d\u7cbe\u5ea6\u4e0e\u9010\u665a\u6298\u6263\u820d\u5165",
+      "level": "\u5355\u5143",
       "roles": [
         "System"
       ],
-      "fixture": "无需Spring或数据库",
+      "fixture": "\u65e0\u9700Spring\u6216\u6570\u636e\u5e93",
       "input": {
         "amount": "100.05",
         "ratio": "0.9",
@@ -1600,23 +1600,23 @@
         ]
       },
       "steps": [
-        "100.05乘0.9；非法金额1.001和-1"
+        "100.05\u4e580.9\uff1b\u975e\u6cd5\u91d1\u989d1.001\u548c-1"
       ],
-      "output": "逐晚结果90.05；超精度及负数金额拒绝",
+      "output": "\u9010\u665a\u7ed3\u679c90.05\uff1b\u8d85\u7cbe\u5ea6\u53ca\u8d1f\u6570\u91d1\u989d\u62d2\u7edd",
       "checks": [
-        "正常结果严格等于\"90.05\"。",
-        "两个非法金额各抛IllegalArgumentException。"
+        "\u6b63\u5e38\u7ed3\u679c\u4e25\u683c\u7b49\u4e8e\"90.05\"\u3002",
+        "\u4e24\u4e2a\u975e\u6cd5\u91d1\u989d\u5404\u629bIllegalArgumentException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.shared.DomainRulesTest#checkoutIsExclusiveAndSameDayCutoffUsesResortZone": {
       "id": "SH-002",
-      "title": "离店不占夜与当地入住截止时间",
-      "level": "单元",
+      "title": "\u79bb\u5e97\u4e0d\u5360\u591c\u4e0e\u5f53\u5730\u5165\u4f4f\u622a\u6b62\u65f6\u95f4",
+      "level": "\u5355\u5143",
       "roles": [
         "System"
       ],
-      "fixture": "固定Clock；zone=Asia/Shanghai；cutoff=15:00；maxNights=30；advanceDays=365。",
+      "fixture": "\u56fa\u5b9aClock\uff1bzone=Asia/Shanghai\uff1bcutoff=15:00\uff1bmaxNights=30\uff1badvanceDays=365\u3002",
       "input": {
         "checkIn": "2026-10-22",
         "checkOut": "2026-10-24",
@@ -1628,18 +1628,18 @@
         ]
       },
       "steps": [
-        "10月22日到24日；当地14:59:59和15:00尝试当日入住；零晚区间"
+        "10\u670822\u65e5\u523024\u65e5\uff1b\u5f53\u573014:59:59\u548c15:00\u5c1d\u8bd5\u5f53\u65e5\u5165\u4f4f\uff1b\u96f6\u665a\u533a\u95f4"
       ],
-      "output": "占22/23两晚不含24；截止前接受，15:00和零晚区间拒绝",
+      "output": "\u536022/23\u4e24\u665a\u4e0d\u542b24\uff1b\u622a\u6b62\u524d\u63a5\u53d7\uff0c15:00\u548c\u96f6\u665a\u533a\u95f4\u62d2\u7edd",
       "checks": [
-        "dates按顺序为2026-10-22、2026-10-23。",
-        "截止前不抛异常；截止时抛DomainException；零晚区间抛DomainException。"
+        "dates\u6309\u987a\u5e8f\u4e3a2026-10-22\u30012026-10-23\u3002",
+        "\u622a\u6b62\u524d\u4e0d\u629b\u5f02\u5e38\uff1b\u622a\u6b62\u65f6\u629bDomainException\uff1b\u96f6\u665a\u533a\u95f4\u629bDomainException\u3002"
       ],
-      "coverageNote": "以对应Java断言为准；实际执行结果保存在results。"
+      "coverageNote": "\u4ee5\u5bf9\u5e94Java\u65ad\u8a00\u4e3a\u51c6\uff1b\u5b9e\u9645\u6267\u884c\u7ed3\u679c\u4fdd\u5b58\u5728results\u3002"
     },
     "com.holidaybooking.backend.mail.MailboxTest#rolesExchangeMailOnlyAfterAcceptance": {
       "id": "ML-001",
-      "title": "CUSTOMER向STAFF发送主题Arrival question、正文Please confirm check-in time.",
+      "title": "CUSTOMER\u5411STAFF\u53d1\u9001\u4e3b\u9898Arrival question\u3001\u6b63\u6587Please confirm check-in time.",
       "level": "module",
       "roles": [
         "Customer",
@@ -1665,17 +1665,17 @@
         "SMTP": "SENT"
       },
       "steps": [
-        "CUSTOMER向STAFF发送主题Arrival question、正文Please confirm check-in time.；STAFF回复；ADMIN向CUSTOMER发信"
+        "CUSTOMER\u5411STAFF\u53d1\u9001\u4e3b\u9898Arrival question\u3001\u6b63\u6587Please confirm check-in time.\uff1bSTAFF\u56de\u590d\uff1bADMIN\u5411CUSTOMER\u53d1\u4fe1"
       ],
-      "output": "初始READY且收件箱为空；投递后SENT、未读1；回复关联原信；三角色均可发信，陌生人不能读取",
+      "output": "\u521d\u59cbREADY\u4e14\u6536\u4ef6\u7bb1\u4e3a\u7a7a\uff1b\u6295\u9012\u540eSENT\u3001\u672a\u8bfb1\uff1b\u56de\u590d\u5173\u8054\u539f\u4fe1\uff1b\u4e09\u89d2\u8272\u5747\u53ef\u53d1\u4fe1\uff0c\u964c\u751f\u4eba\u4e0d\u80fd\u8bfb\u53d6",
       "checks": [
-        "初始READY且收件箱为空；投递后SENT、未读1；回复关联原信；三角色均可发信，陌生人不能读取"
+        "\u521d\u59cbREADY\u4e14\u6536\u4ef6\u7bb1\u4e3a\u7a7a\uff1b\u6295\u9012\u540eSENT\u3001\u672a\u8bfb1\uff1b\u56de\u590d\u5173\u8054\u539f\u4fe1\uff1b\u4e09\u89d2\u8272\u5747\u53ef\u53d1\u4fe1\uff0c\u964c\u751f\u4eba\u4e0d\u80fd\u8bfb\u53d6"
       ],
       "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
     },
     "com.holidaybooking.backend.mail.MailboxTest#readTrashAndAdminInspectionAreIndependent": {
       "id": "ML-002",
-      "title": "客户邮件投递给员工",
+      "title": "\u5ba2\u6237\u90ae\u4ef6\u6295\u9012\u7ed9\u5458\u5de5",
       "level": "module",
       "roles": [
         "Customer",
@@ -1712,17 +1712,17 @@
         ]
       },
       "steps": [
-        "客户邮件投递给员工；管理员读正文；员工标已读、未读、移入INBOX回收站及恢复；客户删除SENT副本"
+        "\u5ba2\u6237\u90ae\u4ef6\u6295\u9012\u7ed9\u5458\u5de5\uff1b\u7ba1\u7406\u5458\u8bfb\u6b63\u6587\uff1b\u5458\u5de5\u6807\u5df2\u8bfb\u3001\u672a\u8bfb\u3001\u79fb\u5165INBOX\u56de\u6536\u7ad9\u53ca\u6062\u590d\uff1b\u5ba2\u6237\u5220\u9664SENT\u526f\u672c"
       ],
-      "output": "管理员读取不改变未读；员工已读后0、未读后1；各自删除互不影响；管理员始终可见正文，列表无正文",
+      "output": "\u7ba1\u7406\u5458\u8bfb\u53d6\u4e0d\u6539\u53d8\u672a\u8bfb\uff1b\u5458\u5de5\u5df2\u8bfb\u540e0\u3001\u672a\u8bfb\u540e1\uff1b\u5404\u81ea\u5220\u9664\u4e92\u4e0d\u5f71\u54cd\uff1b\u7ba1\u7406\u5458\u59cb\u7ec8\u53ef\u89c1\u6b63\u6587\uff0c\u5217\u8868\u65e0\u6b63\u6587",
       "checks": [
-        "管理员读取不改变未读；员工已读后0、未读后1；各自删除互不影响；管理员始终可见正文，列表无正文"
+        "\u7ba1\u7406\u5458\u8bfb\u53d6\u4e0d\u6539\u53d8\u672a\u8bfb\uff1b\u5458\u5de5\u5df2\u8bfb\u540e0\u3001\u672a\u8bfb\u540e1\uff1b\u5404\u81ea\u5220\u9664\u4e92\u4e0d\u5f71\u54cd\uff1b\u7ba1\u7406\u5458\u59cb\u7ec8\u53ef\u89c1\u6b63\u6587\uff0c\u5217\u8868\u65e0\u6b63\u6587"
       ],
       "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
     },
     "com.holidaybooking.backend.mail.MailboxTest#idempotencyValidationAndRateLimitPreventBadMessages": {
       "id": "ML-003",
-      "title": "同幂等键重复提交同一邮件，再改正文重用",
+      "title": "\u540c\u5e42\u7b49\u952e\u91cd\u590d\u63d0\u4ea4\u540c\u4e00\u90ae\u4ef6\uff0c\u518d\u6539\u6b63\u6587\u91cd\u7528",
       "level": "module",
       "roles": [
         "Customer",
@@ -1747,17 +1747,17 @@
         "rejectedMessageNumber": 31
       },
       "steps": [
-        "同幂等键重复提交同一邮件，再改正文重用；未知邮箱、CRLF主题、错误回复对象；同一客户创建第31封邮件"
+        "\u540c\u5e42\u7b49\u952e\u91cd\u590d\u63d0\u4ea4\u540c\u4e00\u90ae\u4ef6\uff0c\u518d\u6539\u6b63\u6587\u91cd\u7528\uff1b\u672a\u77e5\u90ae\u7bb1\u3001CRLF\u4e3b\u9898\u3001\u9519\u8bef\u56de\u590d\u5bf9\u8c61\uff1b\u540c\u4e00\u5ba2\u6237\u521b\u5efa\u7b2c31\u5c01\u90ae\u4ef6"
       ],
-      "output": "重复返回同一ID且仅1条；变更内容、未知邮箱、注入、错回复均拒绝；每小时最多30封",
+      "output": "\u91cd\u590d\u8fd4\u56de\u540c\u4e00ID\u4e14\u4ec51\u6761\uff1b\u53d8\u66f4\u5185\u5bb9\u3001\u672a\u77e5\u90ae\u7bb1\u3001\u6ce8\u5165\u3001\u9519\u56de\u590d\u5747\u62d2\u7edd\uff1b\u6bcf\u5c0f\u65f6\u6700\u591a30\u5c01",
       "checks": [
-        "重复返回同一ID且仅1条；变更内容、未知邮箱、注入、错回复均拒绝；每小时最多30封"
+        "\u91cd\u590d\u8fd4\u56de\u540c\u4e00ID\u4e14\u4ec51\u6761\uff1b\u53d8\u66f4\u5185\u5bb9\u3001\u672a\u77e5\u90ae\u7bb1\u3001\u6ce8\u5165\u3001\u9519\u56de\u590d\u5747\u62d2\u7edd\uff1b\u6bcf\u5c0f\u65f6\u6700\u591a30\u5c01"
       ],
       "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
     },
     "com.holidaybooking.backend.mail.MailboxTest#uncertainDeliveryRequiresExplicitRetry": {
       "id": "ML-004",
-      "title": "SMTP首次RETRY",
+      "title": "SMTP\u9996\u6b21RETRY",
       "level": "module",
       "roles": [
         "Customer",
@@ -1786,17 +1786,17 @@
         ]
       },
       "steps": [
-        "SMTP首次RETRY；推进1分钟后UNKNOWN；尝试不确认和确认重复风险的手动重试；最终SMTP接受"
+        "SMTP\u9996\u6b21RETRY\uff1b\u63a8\u8fdb1\u5206\u949f\u540eUNKNOWN\uff1b\u5c1d\u8bd5\u4e0d\u786e\u8ba4\u548c\u786e\u8ba4\u91cd\u590d\u98ce\u9669\u7684\u624b\u52a8\u91cd\u8bd5\uff1b\u6700\u7ec8SMTP\u63a5\u53d7"
       ],
-      "output": "重试到期前不投递；UNKNOWN不自动重发；未确认拒绝，确认后READY，最终SENT且收件人未读1",
+      "output": "\u91cd\u8bd5\u5230\u671f\u524d\u4e0d\u6295\u9012\uff1bUNKNOWN\u4e0d\u81ea\u52a8\u91cd\u53d1\uff1b\u672a\u786e\u8ba4\u62d2\u7edd\uff0c\u786e\u8ba4\u540eREADY\uff0c\u6700\u7ec8SENT\u4e14\u6536\u4ef6\u4eba\u672a\u8bfb1",
       "checks": [
-        "重试到期前不投递；UNKNOWN不自动重发；未确认拒绝，确认后READY，最终SENT且收件人未读1"
+        "\u91cd\u8bd5\u5230\u671f\u524d\u4e0d\u6295\u9012\uff1bUNKNOWN\u4e0d\u81ea\u52a8\u91cd\u53d1\uff1b\u672a\u786e\u8ba4\u62d2\u7edd\uff0c\u786e\u8ba4\u540eREADY\uff0c\u6700\u7ec8SENT\u4e14\u6536\u4ef6\u4eba\u672a\u8bfb1"
       ],
       "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
     },
     "com.holidaybooking.backend.mail.MailboxTest#httpProtectsRolesCsrfAndAcceptedResponse": {
       "id": "ML-005",
-      "title": "匿名GET邮箱",
+      "title": "\u533f\u540dGET\u90ae\u7bb1",
       "level": "module",
       "roles": [
         "Customer",
@@ -1824,17 +1824,17 @@
         ]
       },
       "steps": [
-        "匿名GET邮箱；客户和员工GET管理员邮箱；管理员GET管理员邮箱；客户POST邮件分别无CSRF、有CSRF"
+        "\u533f\u540dGET\u90ae\u7bb1\uff1b\u5ba2\u6237\u548c\u5458\u5de5GET\u7ba1\u7406\u5458\u90ae\u7bb1\uff1b\u7ba1\u7406\u5458GET\u7ba1\u7406\u5458\u90ae\u7bb1\uff1b\u5ba2\u6237POST\u90ae\u4ef6\u5206\u522b\u65e0CSRF\u3001\u6709CSRF"
       ],
-      "output": "依次401、403、403、200、403、202；成功返回data.state=READY和M前缀ID",
+      "output": "\u4f9d\u6b21401\u3001403\u3001403\u3001200\u3001403\u3001202\uff1b\u6210\u529f\u8fd4\u56dedata.state=READY\u548cM\u524d\u7f00ID",
       "checks": [
-        "依次401、403、403、200、403、202；成功返回data.state=READY和M前缀ID"
+        "\u4f9d\u6b21401\u3001403\u3001403\u3001200\u3001403\u3001202\uff1b\u6210\u529f\u8fd4\u56dedata.state=READY\u548cM\u524d\u7f00ID"
       ],
       "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
     },
     "com.holidaybooking.backend.mail.MailboxTest#bookingNotificationsAppearInTheSameInbox": {
       "id": "ML-006",
-      "title": "创建客户预订并用mock支付，联系邮箱为该客户注册邮箱",
+      "title": "\u521b\u5efa\u5ba2\u6237\u9884\u8ba2\u5e76\u7528mock\u652f\u4ed8\uff0c\u8054\u7cfb\u90ae\u7bb1\u4e3a\u8be5\u5ba2\u6237\u6ce8\u518c\u90ae\u7bb1",
       "level": "module",
       "roles": [
         "Customer",
@@ -1860,57 +1860,37 @@
         "deleted": true
       },
       "steps": [
-        "创建客户预订并用mock支付，联系邮箱为该客户注册邮箱；确认通知SMTP返回SENT"
+        "\u521b\u5efa\u5ba2\u6237\u9884\u8ba2\u5e76\u7528mock\u652f\u4ed8\uff0c\u8054\u7cfb\u90ae\u7bb1\u4e3a\u8be5\u5ba2\u6237\u6ce8\u518c\u90ae\u7bb1\uff1b\u786e\u8ba4\u901a\u77e5SMTP\u8fd4\u56deSENT"
       ],
-      "output": "确认通知以N前缀显示于客户邮箱，正文可读，可标已读及删除；管理员仍可查，陌生人不可查",
+      "output": "\u786e\u8ba4\u901a\u77e5\u4ee5N\u524d\u7f00\u663e\u793a\u4e8e\u5ba2\u6237\u90ae\u7bb1\uff0c\u6b63\u6587\u53ef\u8bfb\uff0c\u53ef\u6807\u5df2\u8bfb\u53ca\u5220\u9664\uff1b\u7ba1\u7406\u5458\u4ecd\u53ef\u67e5\uff0c\u964c\u751f\u4eba\u4e0d\u53ef\u67e5",
       "checks": [
-        "确认通知以N前缀显示于客户邮箱，正文可读，可标已读及删除；管理员仍可查，陌生人不可查"
+        "\u786e\u8ba4\u901a\u77e5\u4ee5N\u524d\u7f00\u663e\u793a\u4e8e\u5ba2\u6237\u90ae\u7bb1\uff0c\u6b63\u6587\u53ef\u8bfb\uff0c\u53ef\u6807\u5df2\u8bfb\u53ca\u5220\u9664\uff1b\u7ba1\u7406\u5458\u4ecd\u53ef\u67e5\uff0c\u964c\u751f\u4eba\u4e0d\u53ef\u67e5"
       ],
       "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
     },
     "com.holidaybooking.backend.mail.EmailAdapterTest#personalMailUsesAuthenticatedReplyToAndConfiguredFrom": {
       "id": "EA-003",
-      "title": "smtp模式，MAIL_FROM=system@holiday.test",
+      "title": "smtp\u6a21\u5f0f\uff0cMAIL_FROM=system@qq.com",
       "level": "module",
       "roles": [
         "System"
       ],
       "fixture": "Mock JavaMailSender; no network.",
       "input": {
-        "scenario": "smtp模式，MAIL_FROM=system@holiday.test；用户customer@holiday.test发给staff@holiday.test，主题Question、正文Hello"
+        "scenario": "smtp\u6a21\u5f0f\uff0cMAIL_FROM=system@qq.com\uff1b\u7528\u6237customer@qq.com\u53d1\u7ed9staff@qq.com\uff0c\u4e3b\u9898Question\u3001\u6b63\u6587Hello"
       },
       "steps": [
-        "smtp模式，MAIL_FROM=system@holiday.test；用户customer@holiday.test发给staff@holiday.test，主题Question、正文Hello"
+        "smtp\u6a21\u5f0f\uff0cMAIL_FROM=system@qq.com\uff1b\u7528\u6237customer@qq.com\u53d1\u7ed9staff@qq.com\uff0c\u4e3b\u9898Question\u3001\u6b63\u6587Hello"
       ],
-      "output": "SENT；SMTP From为系统地址、Reply-To为客户地址、To为员工地址，主题正文原样传递",
+      "output": "SENT\uff1bSMTP From\u4e3a\u7cfb\u7edf\u5730\u5740\u3001Reply-To\u4e3a\u5ba2\u6237\u5730\u5740\u3001To\u4e3a\u5458\u5de5\u5730\u5740\uff0c\u4e3b\u9898\u6b63\u6587\u539f\u6837\u4f20\u9012",
       "checks": [
-        "SENT；SMTP From为系统地址、Reply-To为客户地址、To为员工地址，主题正文原样传递"
-      ],
-      "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
-    },
-    "com.holidaybooking.backend.mail.MailpitSmokeTest#sendTestMailToMailpit": {
-      "id": "SMTP-001",
-      "title": "SMTP localhost:1025",
-      "level": "module",
-      "roles": [
-        "System"
-      ],
-      "fixture": "Local Mailpit, opt-in -Dmailpit.smoke=true; no MySQL.",
-      "input": {
-        "scenario": "SMTP localhost:1025; HTTP localhost:8025; booking@example.test -> guest@example.test; unique subject mailpit-smoke-UUID"
-      },
-      "steps": [
-        "SMTP localhost:1025; HTTP localhost:8025; booking@example.test -> guest@example.test; unique subject mailpit-smoke-UUID"
-      ],
-      "output": "SMTP accepted; search API HTTP 200 contains unique subject and recipient; skipped unless -Dmailpit.smoke=true",
-      "checks": [
-        "SMTP accepted; search API HTTP 200 contains unique subject and recipient; skipped unless -Dmailpit.smoke=true"
+        "SENT\uff1bSMTP From\u4e3a\u7cfb\u7edf\u5730\u5740\u3001Reply-To\u4e3a\u5ba2\u6237\u5730\u5740\u3001To\u4e3a\u5458\u5de5\u5730\u5740\uff0c\u4e3b\u9898\u6b63\u6587\u539f\u6837\u4f20\u9012"
       ],
       "coverageNote": "Actual evidence is generated only when this Java test runs; see linked source."
     },
     "com.holidaybooking.backend.identity.ApiSecurityTest#portalRoleIsCheckedBeforeCreatingSession": {
       "id": "PORTAL-001",
-      "title": "分别创建CUSTOMER、STAFF、ADMIN账户",
+      "title": "\u5206\u522b\u521b\u5efaCUSTOMER\u3001STAFF\u3001ADMIN\u8d26\u6237",
       "level": "API/MySQL",
       "roles": [
         "Customer",
@@ -1929,17 +1909,17 @@
         "portalRole": "wrong role then matching role"
       },
       "steps": [
-        "分别创建CUSTOMER、STAFF、ADMIN账户；使用正确密码先登录错误portalRole，再登录匹配portalRole"
+        "\u5206\u522b\u521b\u5efaCUSTOMER\u3001STAFF\u3001ADMIN\u8d26\u6237\uff1b\u4f7f\u7528\u6b63\u786e\u5bc6\u7801\u5148\u767b\u5f55\u9519\u8befportalRole\uff0c\u518d\u767b\u5f55\u5339\u914dportalRole"
       ],
-      "output": "错误入口403和PORTAL_ROLE_MISMATCH，不授予会话；匹配入口200且返回数据库真实角色",
+      "output": "\u9519\u8bef\u5165\u53e3403\u548cPORTAL_ROLE_MISMATCH\uff0c\u4e0d\u6388\u4e88\u4f1a\u8bdd\uff1b\u5339\u914d\u5165\u53e3200\u4e14\u8fd4\u56de\u6570\u636e\u5e93\u771f\u5b9e\u89d2\u8272",
       "checks": [
-        "错误入口403和PORTAL_ROLE_MISMATCH，不授予会话；匹配入口200且返回数据库真实角色"
+        "\u9519\u8bef\u5165\u53e3403\u548cPORTAL_ROLE_MISMATCH\uff0c\u4e0d\u6388\u4e88\u4f1a\u8bdd\uff1b\u5339\u914d\u5165\u53e3200\u4e14\u8fd4\u56de\u6570\u636e\u5e93\u771f\u5b9e\u89d2\u8272"
       ],
       "coverageNote": "Pending execution; actual response evidence is generated by Test-Backend.ps1."
     },
     "com.holidaybooking.backend.management.ManagementApiTest#userDirectoryRequiresAdminAndDoesNotExposePasswords": {
       "id": "PORTAL-002",
-      "title": "ADMIN和STAFF分别GET /api/v1/admin/users?page=0&size=20",
+      "title": "ADMIN\u548cSTAFF\u5206\u522bGET /api/v1/admin/users?page=0&size=20",
       "level": "API/MySQL",
       "roles": [
         "Customer",
@@ -1961,17 +1941,17 @@
         ]
       },
       "steps": [
-        "ADMIN和STAFF分别GET /api/v1/admin/users?page=0&size=20；ADMIN再请求size=101"
+        "ADMIN\u548cSTAFF\u5206\u522bGET /api/v1/admin/users?page=0&size=20\uff1bADMIN\u518d\u8bf7\u6c42size=101"
       ],
-      "output": "ADMIN得到200分页账户且无密码字段；STAFF为403；非法分页422",
+      "output": "ADMIN\u5f97\u5230200\u5206\u9875\u8d26\u6237\u4e14\u65e0\u5bc6\u7801\u5b57\u6bb5\uff1bSTAFF\u4e3a403\uff1b\u975e\u6cd5\u5206\u9875422",
       "checks": [
-        "ADMIN得到200分页账户且无密码字段；STAFF为403；非法分页422"
+        "ADMIN\u5f97\u5230200\u5206\u9875\u8d26\u6237\u4e14\u65e0\u5bc6\u7801\u5b57\u6bb5\uff1bSTAFF\u4e3a403\uff1b\u975e\u6cd5\u5206\u9875422"
       ],
       "coverageNote": "Pending execution; actual response evidence is generated by Test-Backend.ps1."
     },
     "com.holidaybooking.backend.membership.MembershipServiceTest#purchaseHistoryIsScopedToTheCurrentUser": {
       "id": "PORTAL-003",
-      "title": "客户购买99元/30天/0.85方案",
+      "title": "\u5ba2\u6237\u8d2d\u4e7099\u5143/30\u5929/0.85\u65b9\u6848",
       "level": "API/MySQL",
       "roles": [
         "Customer"
@@ -1990,17 +1970,17 @@
         ]
       },
       "steps": [
-        "客户购买99元/30天/0.85方案；本人和另一个客户分页查询purchases"
+        "\u5ba2\u6237\u8d2d\u4e7099\u5143/30\u5929/0.85\u65b9\u6848\uff1b\u672c\u4eba\u548c\u53e6\u4e00\u4e2a\u5ba2\u6237\u5206\u9875\u67e5\u8be2purchases"
       ],
-      "output": "本人total=1，返回同购买单和支付单；另一客户total=0，不泄漏其他账户记录",
+      "output": "\u672c\u4ebatotal=1\uff0c\u8fd4\u56de\u540c\u8d2d\u4e70\u5355\u548c\u652f\u4ed8\u5355\uff1b\u53e6\u4e00\u5ba2\u6237total=0\uff0c\u4e0d\u6cc4\u6f0f\u5176\u4ed6\u8d26\u6237\u8bb0\u5f55",
       "checks": [
-        "本人total=1，返回同购买单和支付单；另一客户total=0，不泄漏其他账户记录"
+        "\u672c\u4ebatotal=1\uff0c\u8fd4\u56de\u540c\u8d2d\u4e70\u5355\u548c\u652f\u4ed8\u5355\uff1b\u53e6\u4e00\u5ba2\u6237total=0\uff0c\u4e0d\u6cc4\u6f0f\u5176\u4ed6\u8d26\u6237\u8bb0\u5f55"
       ],
       "coverageNote": "Pending execution; actual response evidence is generated by Test-Backend.ps1."
     },
     "com.holidaybooking.backend.booking.BookingChangeTest#changeHistoryRemainsOwnedAndPaginated": {
       "id": "PORTAL-004",
-      "title": "客户为本人未付款订单创建取消报价",
+      "title": "\u5ba2\u6237\u4e3a\u672c\u4eba\u672a\u4ed8\u6b3e\u8ba2\u5355\u521b\u5efa\u53d6\u6d88\u62a5\u4ef7",
       "level": "API/MySQL",
       "roles": [
         "Customer"
@@ -2017,23 +1997,23 @@
         ]
       },
       "steps": [
-        "客户为本人未付款订单创建取消报价；本人分页查看changes；另一个客户读取同订单changes"
+        "\u5ba2\u6237\u4e3a\u672c\u4eba\u672a\u4ed8\u6b3e\u8ba2\u5355\u521b\u5efa\u53d6\u6d88\u62a5\u4ef7\uff1b\u672c\u4eba\u5206\u9875\u67e5\u770bchanges\uff1b\u53e6\u4e00\u4e2a\u5ba2\u6237\u8bfb\u53d6\u540c\u8ba2\u5355changes"
       ],
-      "output": "本人total=1且返回报价ID；其他客户拒绝，不能通过历史列表越权",
+      "output": "\u672c\u4ebatotal=1\u4e14\u8fd4\u56de\u62a5\u4ef7ID\uff1b\u5176\u4ed6\u5ba2\u6237\u62d2\u7edd\uff0c\u4e0d\u80fd\u901a\u8fc7\u5386\u53f2\u5217\u8868\u8d8a\u6743",
       "checks": [
-        "本人total=1且返回报价ID；其他客户拒绝，不能通过历史列表越权"
+        "\u672c\u4ebatotal=1\u4e14\u8fd4\u56de\u62a5\u4ef7ID\uff1b\u5176\u4ed6\u5ba2\u6237\u62d2\u7edd\uff0c\u4e0d\u80fd\u901a\u8fc7\u5386\u53f2\u5217\u8868\u8d8a\u6743"
       ],
       "coverageNote": "Pending execution; actual response evidence is generated by Test-Backend.ps1."
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#setupVerifiesLoginAndNeverStoresPlainPin": {
       "id": "SW-001",
-      "title": "新用户先用错误登录密码初始化，再用test-password-123设置824631",
-      "level": "集成",
+      "title": "\u65b0\u7528\u6237\u5148\u7528\u9519\u8bef\u767b\u5f55\u5bc6\u7801\u521d\u59cb\u5316\uff0c\u518d\u7528test-password-123\u8bbe\u7f6e824631",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "loginPassword": [
           "wrong-password",
@@ -2043,23 +2023,23 @@
         "confirmation": "824631"
       },
       "steps": [
-        "新用户先用错误登录密码初始化，再用test-password-123设置824631"
+        "\u65b0\u7528\u6237\u5148\u7528\u9519\u8bef\u767b\u5f55\u5bc6\u7801\u521d\u59cb\u5316\uff0c\u518d\u7528test-password-123\u8bbe\u7f6e824631"
       ],
-      "output": "错误不配置钱包且失败次数保留；正确后余额0.00，数据库仅BCrypt哈希",
+      "output": "\u9519\u8bef\u4e0d\u914d\u7f6e\u94b1\u5305\u4e14\u5931\u8d25\u6b21\u6570\u4fdd\u7559\uff1b\u6b63\u786e\u540e\u4f59\u989d0.00\uff0c\u6570\u636e\u5e93\u4ec5BCrypt\u54c8\u5e0c",
       "checks": [
-        "错误不配置钱包且失败次数保留；正确后余额0.00，数据库仅BCrypt哈希"
+        "\u9519\u8bef\u4e0d\u914d\u7f6e\u94b1\u5305\u4e14\u5931\u8d25\u6b21\u6570\u4fdd\u7559\uff1b\u6b63\u786e\u540e\u4f59\u989d0.00\uff0c\u6570\u636e\u5e93\u4ec5BCrypt\u54c8\u5e0c"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#creditsAreIdempotentAndBoundToAmount": {
       "id": "SW-002",
-      "title": "同一充值键请求1000.00两次，再复用键改为100.00",
-      "level": "集成",
+      "title": "\u540c\u4e00\u5145\u503c\u952e\u8bf7\u6c421000.00\u4e24\u6b21\uff0c\u518d\u590d\u7528\u952e\u6539\u4e3a100.00",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "amount": [
           "1000.00",
@@ -2070,23 +2050,23 @@
         "idempotencyKey": "same UUID for all requests"
       },
       "steps": [
-        "同一充值键请求1000.00两次，再复用键改为100.00"
+        "\u540c\u4e00\u5145\u503c\u952e\u8bf7\u6c421000.00\u4e24\u6b21\uff0c\u518d\u590d\u7528\u952e\u6539\u4e3a100.00"
       ],
-      "output": "余额1000.00、充值流水1条；不同金额复用键被拒绝",
+      "output": "\u4f59\u989d1000.00\u3001\u5145\u503c\u6d41\u6c341\u6761\uff1b\u4e0d\u540c\u91d1\u989d\u590d\u7528\u952e\u88ab\u62d2\u7edd",
       "checks": [
-        "余额1000.00、充值流水1条；不同金额复用键被拒绝"
+        "\u4f59\u989d1000.00\u3001\u5145\u503c\u6d41\u6c341\u6761\uff1b\u4e0d\u540c\u91d1\u989d\u590d\u7528\u952e\u88ab\u62d2\u7edd"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#wrongPinCounterCommitsAndUnlocksAfterTimeout": {
       "id": "SW-003",
-      "title": "已设置824631；连续5次用111111充值，随后用正确密码，推进时钟16分钟再充值100.00",
-      "level": "集成",
+      "title": "\u5df2\u8bbe\u7f6e824631\uff1b\u8fde\u7eed5\u6b21\u7528111111\u5145\u503c\uff0c\u968f\u540e\u7528\u6b63\u786e\u5bc6\u7801\uff0c\u63a8\u8fdb\u65f6\u949f16\u5206\u949f\u518d\u5145\u503c100.00",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "initialBalance": "1000.00",
         "wrongPin": "111111",
@@ -2096,23 +2076,23 @@
         "advanceMinutes": 16
       },
       "steps": [
-        "已设置824631；连续5次用111111充值，随后用正确密码，推进时钟16分钟再充值100.00"
+        "\u5df2\u8bbe\u7f6e824631\uff1b\u8fde\u7eed5\u6b21\u7528111111\u5145\u503c\uff0c\u968f\u540e\u7528\u6b63\u786e\u5bc6\u7801\uff0c\u63a8\u8fdb\u65f6\u949f16\u5206\u949f\u518d\u5145\u503c100.00"
       ],
-      "output": "第5次及锁定期返回SANDBOX_WALLET_LOCKED；解锁后余额1100.00，剩余次数5",
+      "output": "\u7b2c5\u6b21\u53ca\u9501\u5b9a\u671f\u8fd4\u56deSANDBOX_WALLET_LOCKED\uff1b\u89e3\u9501\u540e\u4f59\u989d1100.00\uff0c\u5269\u4f59\u6b21\u65705",
       "checks": [
-        "第5次及锁定期返回SANDBOX_WALLET_LOCKED；解锁后余额1100.00，剩余次数5"
+        "\u7b2c5\u6b21\u53ca\u9501\u5b9a\u671f\u8fd4\u56deSANDBOX_WALLET_LOCKED\uff1b\u89e3\u9501\u540e\u4f59\u989d1100.00\uff0c\u5269\u4f59\u6b21\u65705"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#concurrentAuthorizationDebitsOnlyOnce": {
       "id": "SW-004",
-      "title": "余额1000.00，待付200.10；两线程同时授权同一支付尝试824631",
-      "level": "集成",
+      "title": "\u4f59\u989d1000.00\uff0c\u5f85\u4ed8200.10\uff1b\u4e24\u7ebf\u7a0b\u540c\u65f6\u6388\u6743\u540c\u4e00\u652f\u4ed8\u5c1d\u8bd5824631",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "initialBalance": "1000.00",
         "orderAmount": "200.10",
@@ -2121,23 +2101,23 @@
         "concurrentRequests": 2
       },
       "steps": [
-        "余额1000.00，待付200.10；两线程同时授权同一支付尝试824631"
+        "\u4f59\u989d1000.00\uff0c\u5f85\u4ed8200.10\uff1b\u4e24\u7ebf\u7a0b\u540c\u65f6\u6388\u6743\u540c\u4e00\u652f\u4ed8\u5c1d\u8bd5824631"
       ],
-      "output": "两请求均读到SUCCEEDED；余额799.90；PAYMENT流水仅1条",
+      "output": "\u4e24\u8bf7\u6c42\u5747\u8bfb\u5230SUCCEEDED\uff1b\u4f59\u989d799.90\uff1bPAYMENT\u6d41\u6c34\u4ec51\u6761",
       "checks": [
-        "两请求均读到SUCCEEDED；余额799.90；PAYMENT流水仅1条"
+        "\u4e24\u8bf7\u6c42\u5747\u8bfb\u5230SUCCEEDED\uff1b\u4f59\u989d799.90\uff1bPAYMENT\u6d41\u6c34\u4ec51\u6761"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#insufficientFundsOwnershipAndExpiryCannotPay": {
       "id": "SW-005",
-      "title": "零余额用户应付200.10；尝试授权；另一用户尝试授权该订单；最后推进16分钟再授权",
-      "level": "集成",
+      "title": "\u96f6\u4f59\u989d\u7528\u6237\u5e94\u4ed8200.10\uff1b\u5c1d\u8bd5\u6388\u6743\uff1b\u53e6\u4e00\u7528\u6237\u5c1d\u8bd5\u6388\u6743\u8be5\u8ba2\u5355\uff1b\u6700\u540e\u63a8\u8fdb16\u5206\u949f\u518d\u6388\u6743",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "balance": "0.00",
         "orderAmount": "200.10",
@@ -2148,23 +2128,23 @@
         "advanceMinutes": 16
       },
       "steps": [
-        "零余额用户应付200.10；尝试授权；另一用户尝试授权该订单；最后推进16分钟再授权"
+        "\u96f6\u4f59\u989d\u7528\u6237\u5e94\u4ed8200.10\uff1b\u5c1d\u8bd5\u6388\u6743\uff1b\u53e6\u4e00\u7528\u6237\u5c1d\u8bd5\u6388\u6743\u8be5\u8ba2\u5355\uff1b\u6700\u540e\u63a8\u8fdb16\u5206\u949f\u518d\u6388\u6743"
       ],
-      "output": "分别拒绝余额不足、越权、过期；订单未成功；无扣款流水",
+      "output": "\u5206\u522b\u62d2\u7edd\u4f59\u989d\u4e0d\u8db3\u3001\u8d8a\u6743\u3001\u8fc7\u671f\uff1b\u8ba2\u5355\u672a\u6210\u529f\uff1b\u65e0\u6263\u6b3e\u6d41\u6c34",
       "checks": [
-        "分别拒绝余额不足、越权、过期；订单未成功；无扣款流水"
+        "\u5206\u522b\u62d2\u7edd\u4f59\u989d\u4e0d\u8db3\u3001\u8d8a\u6743\u3001\u8fc7\u671f\uff1b\u8ba2\u5355\u672a\u6210\u529f\uff1b\u65e0\u6263\u6b3e\u6d41\u6c34"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#cancelledAttemptCanBeReplacedButNeverCharged": {
       "id": "SW-006",
-      "title": "200.10待付尝试取消，再授权旧尝试，再用Wechat创建新尝试付款",
-      "level": "集成",
+      "title": "200.10\u5f85\u4ed8\u5c1d\u8bd5\u53d6\u6d88\uff0c\u518d\u6388\u6743\u65e7\u5c1d\u8bd5\uff0c\u518d\u7528Wechat\u521b\u5efa\u65b0\u5c1d\u8bd5\u4ed8\u6b3e",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "balance": "1000.00",
         "orderAmount": "200.10",
@@ -2173,23 +2153,23 @@
         "pin": "824631"
       },
       "steps": [
-        "200.10待付尝试取消，再授权旧尝试，再用Wechat创建新尝试付款"
+        "200.10\u5f85\u4ed8\u5c1d\u8bd5\u53d6\u6d88\uff0c\u518d\u6388\u6743\u65e7\u5c1d\u8bd5\uff0c\u518d\u7528Wechat\u521b\u5efa\u65b0\u5c1d\u8bd5\u4ed8\u6b3e"
       ],
-      "output": "旧尝试CLOSED且不能扣款；新尝试成功；余额799.90",
+      "output": "\u65e7\u5c1d\u8bd5CLOSED\u4e14\u4e0d\u80fd\u6263\u6b3e\uff1b\u65b0\u5c1d\u8bd5\u6210\u529f\uff1b\u4f59\u989d799.90",
       "checks": [
-        "旧尝试CLOSED且不能扣款；新尝试成功；余额799.90"
+        "\u65e7\u5c1d\u8bd5CLOSED\u4e14\u4e0d\u80fd\u6263\u6b3e\uff1b\u65b0\u5c1d\u8bd5\u6210\u529f\uff1b\u4f59\u989d799.90"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#changePinInvalidatesOldSecret": {
       "id": "SW-007",
-      "title": "原密码824631修改为635284；分别用旧、新密码充值100.00",
-      "level": "集成",
+      "title": "\u539f\u5bc6\u7801824631\u4fee\u6539\u4e3a635284\uff1b\u5206\u522b\u7528\u65e7\u3001\u65b0\u5bc6\u7801\u5145\u503c100.00",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "oldPin": "824631",
         "pin": "635284",
@@ -2197,23 +2177,23 @@
         "creditAmount": "100.00"
       },
       "steps": [
-        "原密码824631修改为635284；分别用旧、新密码充值100.00"
+        "\u539f\u5bc6\u7801824631\u4fee\u6539\u4e3a635284\uff1b\u5206\u522b\u7528\u65e7\u3001\u65b0\u5bc6\u7801\u5145\u503c100.00"
       ],
-      "output": "旧密码拒绝，新密码成功；余额1100.00",
+      "output": "\u65e7\u5bc6\u7801\u62d2\u7edd\uff0c\u65b0\u5bc6\u7801\u6210\u529f\uff1b\u4f59\u989d1100.00",
       "checks": [
-        "旧密码拒绝，新密码成功；余额1100.00"
+        "\u65e7\u5bc6\u7801\u62d2\u7edd\uff0c\u65b0\u5bc6\u7801\u6210\u529f\uff1b\u4f59\u989d1100.00"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#bookingRefundCreditsOriginalWalletOnlyOnce": {
       "id": "SW-008",
-      "title": "余额1000.00支付预订200.10；24小时前取消，重复刷新退款并重放渠道退款",
-      "level": "集成",
+      "title": "\u4f59\u989d1000.00\u652f\u4ed8\u9884\u8ba2200.10\uff1b24\u5c0f\u65f6\u524d\u53d6\u6d88\uff0c\u91cd\u590d\u5237\u65b0\u9000\u6b3e\u5e76\u91cd\u653e\u6e20\u9053\u9000\u6b3e",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "balance": "1000.00",
         "payment": "200.10",
@@ -2223,23 +2203,23 @@
         "providerReplayCount": 1
       },
       "steps": [
-        "余额1000.00支付预订200.10；24小时前取消，重复刷新退款并重放渠道退款"
+        "\u4f59\u989d1000.00\u652f\u4ed8\u9884\u8ba2200.10\uff1b24\u5c0f\u65f6\u524d\u53d6\u6d88\uff0c\u91cd\u590d\u5237\u65b0\u9000\u6b3e\u5e76\u91cd\u653e\u6e20\u9053\u9000\u6b3e"
       ],
-      "output": "退款SUCCEEDED，余额恢复1000.00；REFUND流水1条，不重复入账",
+      "output": "\u9000\u6b3eSUCCEEDED\uff0c\u4f59\u989d\u6062\u590d1000.00\uff1bREFUND\u6d41\u6c341\u6761\uff0c\u4e0d\u91cd\u590d\u5165\u8d26",
       "checks": [
-        "退款SUCCEEDED，余额恢复1000.00；REFUND流水1条，不重复入账"
+        "\u9000\u6b3eSUCCEEDED\uff0c\u4f59\u989d\u6062\u590d1000.00\uff1bREFUND\u6d41\u6c341\u6761\uff0c\u4e0d\u91cd\u590d\u5165\u8d26"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#membershipRequiresWalletPaymentAndActivatesOnce": {
       "id": "SW-009",
-      "title": "余额1000.00，购买默认199.00会员；授权同一支付两次",
-      "level": "集成",
+      "title": "\u4f59\u989d1000.00\uff0c\u8d2d\u4e70\u9ed8\u8ba4199.00\u4f1a\u5458\uff1b\u6388\u6743\u540c\u4e00\u652f\u4ed8\u4e24\u6b21",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "balance": "1000.00",
         "planId": 1,
@@ -2249,23 +2229,23 @@
         "authorizeCount": 2
       },
       "steps": [
-        "余额1000.00，购买默认199.00会员；授权同一支付两次"
+        "\u4f59\u989d1000.00\uff0c\u8d2d\u4e70\u9ed8\u8ba4199.00\u4f1a\u5458\uff1b\u6388\u6743\u540c\u4e00\u652f\u4ed8\u4e24\u6b21"
       ],
-      "output": "付款前无会员，付款后激活；重复授权不延长有效期；余额801.00",
+      "output": "\u4ed8\u6b3e\u524d\u65e0\u4f1a\u5458\uff0c\u4ed8\u6b3e\u540e\u6fc0\u6d3b\uff1b\u91cd\u590d\u6388\u6743\u4e0d\u5ef6\u957f\u6709\u6548\u671f\uff1b\u4f59\u989d801.00",
       "checks": [
-        "付款前无会员，付款后激活；重复授权不延长有效期；余额801.00"
+        "\u4ed8\u6b3e\u524d\u65e0\u4f1a\u5458\uff0c\u4ed8\u6b3e\u540e\u6fc0\u6d3b\uff1b\u91cd\u590d\u6388\u6743\u4e0d\u5ef6\u957f\u6709\u6548\u671f\uff1b\u4f59\u989d801.00"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletTest#historicalMockRefundDoesNotMintWalletFunds": {
       "id": "SW-010",
-      "title": "余额1000.00，用内部历史模拟入口支付200.10而非钱包扣款；退款200.10两次",
-      "level": "集成",
+      "title": "\u4f59\u989d1000.00\uff0c\u7528\u5185\u90e8\u5386\u53f2\u6a21\u62df\u5165\u53e3\u652f\u4ed8200.10\u800c\u975e\u94b1\u5305\u6263\u6b3e\uff1b\u9000\u6b3e200.10\u4e24\u6b21",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "balance": "1000.00",
         "historicalPayment": "200.10",
@@ -2274,23 +2254,23 @@
         "providerReplayCount": 2
       },
       "steps": [
-        "余额1000.00，用内部历史模拟入口支付200.10而非钱包扣款；退款200.10两次"
+        "\u4f59\u989d1000.00\uff0c\u7528\u5185\u90e8\u5386\u53f2\u6a21\u62df\u5165\u53e3\u652f\u4ed8200.10\u800c\u975e\u94b1\u5305\u6263\u6b3e\uff1b\u9000\u6b3e200.10\u4e24\u6b21"
       ],
-      "output": "历史付款退款成功；钱包余额仍1000.00；不伪造REFUND流水",
+      "output": "\u5386\u53f2\u4ed8\u6b3e\u9000\u6b3e\u6210\u529f\uff1b\u94b1\u5305\u4f59\u989d\u4ecd1000.00\uff1b\u4e0d\u4f2a\u9020REFUND\u6d41\u6c34",
       "checks": [
-        "历史付款退款成功；钱包余额仍1000.00；不伪造REFUND流水"
+        "\u5386\u53f2\u4ed8\u6b3e\u9000\u6b3e\u6210\u529f\uff1b\u94b1\u5305\u4f59\u989d\u4ecd1000.00\uff1b\u4e0d\u4f2a\u9020REFUND\u6d41\u6c34"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletApiTest#authenticationCsrfAndRemovedBypassAreEnforced": {
       "id": "SW-011",
-      "title": "匿名GET钱包；登录后不带CSRF设置PIN；登录且带CSRF调用旧succeed路由",
-      "level": "集成",
+      "title": "\u533f\u540dGET\u94b1\u5305\uff1b\u767b\u5f55\u540e\u4e0d\u5e26CSRF\u8bbe\u7f6ePIN\uff1b\u767b\u5f55\u4e14\u5e26CSRF\u8c03\u7528\u65e7succeed\u8def\u7531",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "requests": [
           "GET /sandbox/wallet (anonymous)",
@@ -2299,23 +2279,23 @@
         ]
       },
       "steps": [
-        "匿名GET钱包；登录后不带CSRF设置PIN；登录且带CSRF调用旧succeed路由"
+        "\u533f\u540dGET\u94b1\u5305\uff1b\u767b\u5f55\u540e\u4e0d\u5e26CSRF\u8bbe\u7f6ePIN\uff1b\u767b\u5f55\u4e14\u5e26CSRF\u8c03\u7528\u65e7succeed\u8def\u7531"
       ],
-      "output": "分别401、403、404；不存在无密码支付入口",
+      "output": "\u5206\u522b401\u3001403\u3001404\uff1b\u4e0d\u5b58\u5728\u65e0\u5bc6\u7801\u652f\u4ed8\u5165\u53e3",
       "checks": [
-        "分别401、403、404；不存在无密码支付入口"
+        "\u5206\u522b401\u3001403\u3001404\uff1b\u4e0d\u5b58\u5728\u65e0\u5bc6\u7801\u652f\u4ed8\u5165\u53e3"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
     },
     "com.holidaybooking.backend.payment.SandboxWalletApiTest#walletResponseNeverContainsCredentials": {
       "id": "SW-012",
-      "title": "用登录密码test-password-123设置pin=824631、confirmation=824631，再GET钱包",
-      "level": "集成",
+      "title": "\u7528\u767b\u5f55\u5bc6\u7801test-password-123\u8bbe\u7f6epin=824631\u3001confirmation=824631\uff0c\u518dGET\u94b1\u5305",
+      "level": "\u96c6\u6210",
       "roles": [
         "Customer",
         "System"
       ],
-      "fixture": "F0；独立MySQL；初始PIN=824631，登录密码=test-password-123；不访问真实支付渠道",
+      "fixture": "F0\uff1b\u72ec\u7acbMySQL\uff1b\u521d\u59cbPIN=824631\uff0c\u767b\u5f55\u5bc6\u7801=test-password-123\uff1b\u4e0d\u8bbf\u95ee\u771f\u5b9e\u652f\u4ed8\u6e20\u9053",
       "input": {
         "loginPassword": "test-password-123",
         "pin": "824631",
@@ -2326,13 +2306,181 @@
         ]
       },
       "steps": [
-        "用登录密码test-password-123设置pin=824631、confirmation=824631，再GET钱包"
+        "\u7528\u767b\u5f55\u5bc6\u7801test-password-123\u8bbe\u7f6epin=824631\u3001confirmation=824631\uff0c\u518dGET\u94b1\u5305"
       ],
-      "output": "200；configured=true，balance=0.00，currency=CNY；响应无pin、pinHash或loginPassword",
+      "output": "200\uff1bconfigured=true\uff0cbalance=0.00\uff0ccurrency=CNY\uff1b\u54cd\u5e94\u65e0pin\u3001pinHash\u6216loginPassword",
       "checks": [
-        "200；configured=true，balance=0.00，currency=CNY；响应无pin、pinHash或loginPassword"
+        "200\uff1bconfigured=true\uff0cbalance=0.00\uff0ccurrency=CNY\uff1b\u54cd\u5e94\u65e0pin\u3001pinHash\u6216loginPassword"
       ],
-      "coverageNote": "已编写，未执行；实际结果由Test-Backend.ps1执行后更新。"
+      "coverageNote": "\u5df2\u7f16\u5199\uff0c\u672a\u6267\u884c\uff1b\u5b9e\u9645\u7ed3\u679c\u7531Test-Backend.ps1\u6267\u884c\u540e\u66f4\u65b0\u3002"
+    },
+    "com.holidaybooking.backend.payment.SandboxProtocolTest#callbackRejectsTamperingAndStaleEvents": {
+      "id": "WP-001",
+      "title": "callbackRejectsTamperingAndStaleEvents",
+      "level": "unit/HTTP contract",
+      "roles": [
+        "System"
+      ],
+      "fixture": "Fixed clock T0=2026-11-07T00:00:00Z; no DB/SMTP; loopback HTTP server only in WP-003",
+      "input": {
+        "secret": "32-character test-only value",
+        "timestamp": "2026-11-07T00:00:00Z",
+        "body": {
+          "outTradeNo": "HB123"
+        },
+        "mutations": [
+          "body whitespace",
+          "signature=not-hex",
+          "timestamp T0-301s"
+        ]
+      },
+      "steps": [
+        "Execute Java case; inspect assertions and results evidence"
+      ],
+      "output": "Only original fresh signature is accepted",
+      "checks": [
+        "Only original fresh signature is accepted"
+      ],
+      "coverageNote": "HTTP contract uses an in-process server; deployed WireMock/MySQL E2E remains separate."
+    },
+    "com.holidaybooking.backend.payment.SandboxProtocolTest#circuitAllowsOnlyOneRecoveryProbe": {
+      "id": "WP-002",
+      "title": "circuitAllowsOnlyOneRecoveryProbe",
+      "level": "unit/HTTP contract",
+      "roles": [
+        "System"
+      ],
+      "fixture": "Fixed clock T0=2026-11-07T00:00:00Z; no DB/SMTP; loopback HTTP server only in WP-003",
+      "input": {
+        "failures": 5,
+        "timeMs": [
+          0,
+          29999,
+          30000
+        ],
+        "concurrentProbes": 2
+      },
+      "steps": [
+        "Execute Java case; inspect assertions and results evidence"
+      ],
+      "output": "Open for 30 seconds; exactly one half-open probe; successful probe closes circuit",
+      "checks": [
+        "Open for 30 seconds; exactly one half-open probe; successful probe closes circuit"
+      ],
+      "coverageNote": "HTTP contract uses an in-process server; deployed WireMock/MySQL E2E remains separate."
+    },
+    "com.holidaybooking.backend.payment.SandboxProtocolTest#httpFailuresAndMismatchedTradesCannotReachLedger": {
+      "id": "WP-003",
+      "title": "httpFailuresAndMismatchedTradesCannotReachLedger",
+      "level": "unit/HTTP contract",
+      "roles": [
+        "System"
+      ],
+      "fixture": "Fixed clock T0=2026-11-07T00:00:00Z; no DB/SMTP; loopback HTTP server only in WP-003",
+      "input": {
+        "method": "POST",
+        "path": "/channel/create",
+        "outTradeNo": "HB123",
+        "responses": [
+          503,
+          {
+            "operation": "create",
+            "outTradeNo": "HB999",
+            "decision": "ACCEPTED"
+          }
+        ]
+      },
+      "steps": [
+        "Execute Java case; inspect assertions and results evidence"
+      ],
+      "output": "Both fail with DomainException; no ledger interaction",
+      "checks": [
+        "Both fail with DomainException; no ledger interaction"
+      ],
+      "coverageNote": "HTTP contract uses an in-process server; deployed WireMock/MySQL E2E remains separate."
+    },
+    "com.holidaybooking.backend.shared.DesignBoundaryTest#roundedZeroQuoteCannotCreatePayment": {
+      "id": "DB-001",
+      "title": "roundedZeroQuoteCannotCreatePayment",
+      "level": "unit",
+      "roles": [
+        "System"
+      ],
+      "fixture": "Isolated test setup; no live SMTP",
+      "input": {
+        "basePrice": "0.01",
+        "ratio": "0.01",
+        "roomTypeId": 1,
+        "userId": 7,
+        "rooms": 1,
+        "checkIn": "2026-11-10",
+        "checkOut": "2026-11-11"
+      },
+      "steps": [
+        "Run corresponding Java case"
+      ],
+      "output": "PRICE_TOO_LOW; no quote persistence",
+      "checks": [
+        "PRICE_TOO_LOW; no quote persistence"
+      ],
+      "coverageNote": "Actual output is written by Test-Backend.ps1 after execution."
+    },
+    "com.holidaybooking.backend.shared.DesignBoundaryTest#coreLayersDoNotDependOnTransportOrPersistenceAdapters": {
+      "id": "DB-002",
+      "title": "coreLayersDoNotDependOnTransportOrPersistenceAdapters",
+      "level": "unit",
+      "roles": [
+        "System"
+      ],
+      "fixture": "Isolated test setup; no live SMTP",
+      "input": {
+        "sourceRoot": "backend/src/main/java",
+        "layers": [
+          "domain",
+          "application"
+        ]
+      },
+      "steps": [
+        "Run corresponding Java case"
+      ],
+      "output": "No project transport/persistence adapter dependencies",
+      "checks": [
+        "No project transport/persistence adapter dependencies"
+      ],
+      "coverageNote": "Actual output is written by Test-Backend.ps1 after execution."
+    },
+    "com.holidaybooking.backend.identity.ApiSecurityTest#staffAndAdminCannotUseCustomerBusinessRoutes": {
+      "id": "AU-ROLE-01",
+      "title": "staffAndAdminCannotUseCustomerBusinessRoutes",
+      "level": "module/MySQL",
+      "roles": [
+        "Admin"
+      ],
+      "fixture": "Isolated test setup; no live SMTP",
+      "input": {
+        "roles": [
+          "STAFF",
+          "ADMIN"
+        ],
+        "GET": [
+          "/api/v1/bookings",
+          "/api/v1/payment-orders/1"
+        ],
+        "POST": {
+          "path": "/api/v1/quotes",
+          "csrf": true,
+          "body": {}
+        },
+        "publicGET": "/api/v1/room-types"
+      },
+      "steps": [
+        "Run corresponding Java case"
+      ],
+      "output": "Protected customer routes 403; public catalog 200",
+      "checks": [
+        "Protected customer routes 403; public catalog 200"
+      ],
+      "coverageNote": "Actual output is written by Test-Backend.ps1 after execution."
     }
   }
 }
