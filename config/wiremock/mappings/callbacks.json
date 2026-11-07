@@ -1,0 +1,13 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "POST",
+    "urlPath": "/api/v1/payment-callbacks/wiremock"
+  },
+  "response": {
+    "proxyBaseUrl": "{{systemValue type='ENVIRONMENT' key='CALLBACK_ORIGIN'}}",
+    "transformers": [
+      "response-template"
+    ]
+  }
+}

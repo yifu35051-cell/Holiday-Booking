@@ -1,5 +1,4 @@
-# Production deployment for this project, including mock payment and Mailpit.
-# Daily startup uses installed images only. Building is an explicit separate step.
+# Installed images only; build/pull is an explicit preparation step.
 name: holiday-booking-demo
 services:
   mysql:
@@ -11,32 +10,22 @@ services:
       MYSQL_USER: holiday_booking
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in config/deployment.env}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in config/deployment.env}
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci", "--default-time-zone=+00:00"]
+    command:
+    - --character-set-server=utf8mb4
+    - --collation-server=utf8mb4_0900_ai_ci
+    - --default-time-zone=+00:00
     volumes:
-      - mysql-data:/var/lib/mysql
+    - mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "MYSQL_PWD=\"$${MYSQL_PASSWORD}\" mysql --protocol=TCP -h127.0.0.1 -u\"$${MYSQL_USER}\" \"$${MYSQL_DATABASE}\" --batch --skip-column-names -e 'SELECT 1' >/dev/null 2>&1"]
+      test:
+      - CMD-SHELL
+      - MYSQL_PWD="$${MYSQL_PASSWORD}" mysql --protocol=TCP -h127.0.0.1 -u"$${MYSQL_USER}"
+        "$${MYSQL_DATABASE}" --batch --skip-column-names -e 'SELECT 1' >/dev/null
+        2>&1
       interval: 5s
       timeout: 5s
       retries: 36
       start_period: 30s
-
-  mailpit:
-    image: axllent/mailpit:latest
-    pull_policy: never
-    restart: unless-stopped
-    environment:
-      MP_DATABASE: /data/mailpit.db
-    volumes:
-      - mailpit-data:/data
-    ports:
-      - "127.0.0.1:${MAILPIT_WEB_PORT:-8026}:8025"
-    healthcheck:
-      test: ["CMD", "/mailpit", "readyz"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
   backend:
     image: holiday-booking-backend:${APP_VERSION:-local-v1}
     pull_policy: never
@@ -44,51 +33,58 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      mailpit:
-        condition: service_healthy
+      wiremock:
+        condition: service_started
     environment:
-      # The existing mock adapter and seed loader require this Spring profile.
-      # It is also used for the deployed Docker stack; no dev server is involved.
-      SPRING_PROFILES_ACTIVE: local
+      SPRING_PROFILES_ACTIVE: sandbox
       SERVER_ADDRESS: 0.0.0.0
       SERVER_PORT: 8080
-      DB_URL: "jdbc:mysql://mysql:3306/holiday_booking?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true"
+      DB_URL: jdbc:mysql://mysql:3306/holiday_booking?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
       DB_USERNAME: holiday_booking
       DB_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD}
       BOOTSTRAP_ADMIN_EMAIL: ${BOOTSTRAP_ADMIN_EMAIL:-}
       BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
-      PAYMENT_MODE: mock
+      PAYMENT_MODE: wiremock
       EMAIL_MODE: smtp
-      JOBS_ENABLED: "true"
-      MAIL_HOST: mailpit
-      MAIL_PORT: 1025
-      MAIL_FROM: noreply@holiday.example.test
-      MAIL_SMTP_AUTH: "false"
-      MAIL_STARTTLS: "false"
-      MAIL_SSL_ENABLE: "false"
-      MAILPIT_ENABLED: "true"
-      MAILPIT_PORT: 1025
+      JOBS_ENABLED: 'true'
+      MAIL_HOST: ${MAIL_HOST:?Configure DirectMail SMTP host}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_FROM: ${MAIL_FROM:?Configure verified sender}
+      MAIL_SMTP_AUTH: 'true'
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
+      MAIL_SSL_ENABLE: ${MAIL_SSL_ENABLE:-true}
+      MAILPIT_ENABLED: 'false'
       EMAIL_DAILY_LIMIT: ${EMAIL_DAILY_LIMIT:-200}
-      API_DOCS_ENABLED: "false"
-      SESSION_COOKIE_SECURE: "false"
-      DEMO_DATA_ENABLED: ${DEMO_DATA_ENABLED:-true}
-      DEMO_CONTAINER: "true"
+      API_DOCS_ENABLED: 'false'
+      SESSION_COOKIE_SECURE: 'false'
+      DEMO_DATA_ENABLED: ${DEMO_DATA_ENABLED:-false}
+      DEMO_CONTAINER: 'true'
       DEMO_CREDENTIALS_FILE: /app/local/demo-accounts.properties
+      WIREMOCK_BASE_URL: http://wiremock:8080
+      WIREMOCK_CALLBACK_SECRET: ${WIREMOCK_CALLBACK_SECRET:?Configure callback secret}
+      MAIL_USERNAME: ${MAIL_USERNAME:?Configure DirectMail sender}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:?Configure SMTP password}
+      MAIL_RECIPIENT_ALLOWLIST: ${MAIL_RECIPIENT_ALLOWLIST:-}
+      TRUSTED_EDGE_SECRET: ${TRUSTED_EDGE_SECRET:?Configure proxy secret}
     volumes:
-      - demo-credentials:/app/local
+    - demo-credentials:/app/local
     read_only: true
     tmpfs:
-      - /tmp
+    - /tmp
     security_opt:
-      - no-new-privileges:true
-    cap_drop: [ALL]
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/actuator/health/readiness"]
+      test:
+      - CMD
+      - curl
+      - -fsS
+      - http://127.0.0.1:8080/actuator/health/readiness
       interval: 5s
       timeout: 5s
       retries: 48
       start_period: 60s
-
   frontend:
     image: holiday-booking-frontend:${APP_VERSION:-local-v1}
     pull_policy: never
@@ -97,20 +93,46 @@ services:
       backend:
         condition: service_healthy
     ports:
-      - "127.0.0.1:${WEB_PORT:-8088}:8080"
+    - 127.0.0.1:${WEB_PORT:-8088}:8080
     read_only: true
     tmpfs:
-      - /tmp
+    - /tmp
     security_opt:
-      - no-new-privileges:true
-    cap_drop: [ALL]
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
+      test:
+      - CMD
+      - wget
+      - -q
+      - --spider
+      - http://127.0.0.1:8080/healthz
       interval: 5s
       timeout: 5s
       retries: 12
-
+    environment:
+      TRUSTED_EDGE_SECRET: ${TRUSTED_EDGE_SECRET:?Configure proxy secret}
+  wiremock:
+    image: wiremock/wiremock:3.13.2-2
+    pull_policy: never
+    restart: unless-stopped
+    command:
+    - --global-response-templating
+    - --permitted-system-keys
+    - CALLBACK_ORIGIN
+    - --no-request-journal
+    - --disable-request-logging
+    - --proxy-timeout
+    - "8000"
+    environment:
+      CALLBACK_ORIGIN: http://backend:8080
+    volumes:
+    - ./wiremock:/home/wiremock:ro
+    security_opt:
+    - no-new-privileges:true
+    cap_drop:
+    - ALL
 volumes:
-  mysql-data:
-  mailpit-data:
-  demo-credentials:
+  mysql-data: null
+  demo-credentials: null

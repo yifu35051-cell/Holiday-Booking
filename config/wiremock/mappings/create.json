@@ -1,0 +1,26 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "POST",
+    "urlPath": "/channel/create",
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$.outTradeNo"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "operation": "create",
+      "outTradeNo": "{{jsonPath request.body '$.outTradeNo'}}",
+      "decision": "ACCEPTED"
+    },
+    "transformers": [
+      "response-template"
+    ]
+  }
+}
