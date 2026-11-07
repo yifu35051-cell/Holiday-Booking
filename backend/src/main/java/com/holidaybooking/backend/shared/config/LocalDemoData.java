@@ -82,14 +82,9 @@ public class LocalDemoData implements ApplicationRunner {
             throw new IllegalStateException(
                     "Demo import requires loopback holiday_booking MySQL and mock payment");
         }
-        if ("smtp".equals(settings.getEmailMode())
-                && (!environment.getProperty("MAILPIT_ENABLED", Boolean.class, false)
-                        || !(container ? List.of("mailpit") : List.of("localhost", "127.0.0.1"))
-                                .contains(environment.getProperty("spring.mail.host"))
-                        || !environment
-                                .getProperty("spring.mail.port", "")
-                                .equals(environment.getProperty("MAILPIT_PORT", "1025")))) {
-            throw new IllegalStateException("Demo SMTP must use the configured local Mailpit");
+        if ("smtp".equals(settings.getEmailMode())) {
+            throw new IllegalStateException(
+                    "Seed import must use EMAIL_MODE=log; it must never send fixture mail through DirectMail");
         }
     }
 
@@ -233,7 +228,8 @@ public class LocalDemoData implements ApplicationRunner {
                         Long.parseLong(quote.id()),
                         "CANCEL",
                         "demo-v1-cancel");
-        for (var refund : applied.refunds()) refunds.refresh(accounts.get(1), refund.id());
+        for (var refund : applied.refunds())
+            refunds.refresh(accounts.get(1), Long.parseLong(refund.id()));
 
         // 正常排队，不伪造已投递状态。应用启动后由Mailpit实际接受邮件。
         mail.send(

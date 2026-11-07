@@ -1,4 +1,5 @@
 <template>
+  <p class="row"><RouterLink to="/explore">无需登录，浏览客房与可用日期</RouterLink></p>
   <main class="entry">
     <div class="eyebrow">HOLIDAY BOOKING</div>
     <h1>把时光，留给假日。</h1>

@@ -54,7 +54,9 @@ export const bookingApi = {
   quote: (input: StayInput) => req<Quote>('/quotes', 'POST', input),
   create: (input: object, key: string) => req<Booking>('/bookings', 'POST', input, key),
   list: (filters: object, admin = false) =>
-    req<Page<Booking>>(`${admin ? '/admin' : ''}/bookings${query(filters)}`),
+    req<Page<import('./types').BookingSummary>>(
+      `${admin ? '/admin' : ''}/bookings${query(filters)}`,
+    ),
   get: (id: string, admin = false) => req<Booking>(`${admin ? '/admin' : ''}/bookings/${id}`),
   changes: (id: string, page = 0) => req<Page<Change>>(`/bookings/${id}/changes${query({ page })}`),
   change: (id: string, changeId: string) => req<Change>(`/bookings/${id}/changes/${changeId}`),
@@ -113,6 +115,12 @@ export const mailApi = {
     req<Mail>(`${admin ? '/admin' : ''}/mail/messages/${id}/retry`, 'POST', { acknowledgeUnknown }),
 }
 export const managementApi = {
+  recovery: () =>
+    req<{ key: string; failures: number; nextAttemptAt: string; manualReview: boolean }[]>(
+      '/admin/integrations/recovery',
+    ),
+  releaseRecovery: (key: string) =>
+    req<boolean>(`/admin/integrations/recovery/${encodeURIComponent(key)}/release`, 'POST'),
   users: (page = 0) => req<Page<User>>(`/admin/users${query({ page })}`),
   role: (id: string, role: Role) => req<User>(`/admin/users/${id}/role`, 'PUT', { role }),
   notifications: (page = 0) => req<Notification[]>(`/admin/notifications${query({ page })}`),

@@ -64,7 +64,7 @@ public class JdbcMailRepository implements MailRepository {
             Instant now) {
         var keys = new GeneratedKeyHolder();
         jdbc.sql(
-                        "insert into mail_message(sender_id,recipient_id,sender_email,recipient_email,subject,body,reply_to_id,created_at,due_at) values(?,?,?,?,?,?,?,?,?)")
+                        "insert into mail_message(sender_id,recipient_id,sender_email,recipient_email,subject,body,reply_to_id,created_at,due_at,source_trace) values(?,?,?,?,?,?,?,?,?,?)")
                 .params(
                         sender,
                         recipient,
@@ -74,7 +74,8 @@ public class JdbcMailRepository implements MailRepository {
                         body,
                         replyTo,
                         JdbcTime.write(now),
-                        JdbcTime.write(now))
+                        JdbcTime.write(now),
+                        org.slf4j.MDC.get("traceId"))
                 .update(keys, "id");
         return Objects.requireNonNull(keys.getKey()).longValue();
     }
@@ -240,7 +241,8 @@ public class JdbcMailRepository implements MailRepository {
                                         rs.getString("subject"),
                                         rs.getString("body"),
                                         rs.getInt("attempts"),
-                                        lease))
+                                        lease,
+                                        rs.getString("source_trace")))
                 .single();
     }
 

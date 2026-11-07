@@ -18,9 +18,15 @@ import org.springframework.mail.javamail.JavaMailSender;
 class EmailAdapterTest {
     private final BookingProperties settings = new BookingProperties();
     private final JavaMailSender transport = mock(JavaMailSender.class);
-    private final ConfiguredEmailSender adapter = new ConfiguredEmailSender(settings, transport);
+    private final ConfiguredEmailSender adapter =
+            new ConfiguredEmailSender(
+                    new com.holidaybooking.backend.shared.application.IntegrationCircuit(
+                            java.time.Clock.systemUTC(),
+                            new io.micrometer.core.instrument.simple.SimpleMeterRegistry()),
+                    settings,
+                    transport);
     private final EmailSender.Message message =
-            new EmailSender.Message(null, "guest@example.com", "subject", "body");
+            new EmailSender.Message(null, "guest@qq.com", "subject", "body");
 
     @Test
     @CaseSpec(
@@ -34,8 +40,8 @@ class EmailAdapterTest {
         assertThat(actual(adapter.sendMessage(message).outcome()))
                 .isEqualTo(EmailSender.Outcome.FAILED);
         settings.setEmailMode("smtp");
-        settings.setEmailFrom("sender@example.com");
-        settings.setEmailAllowlist(List.of("another@example.com"));
+        settings.setEmailFrom("sender@qq.com");
+        settings.setEmailAllowlist(List.of("another@qq.com"));
         assertThat(actual(adapter.sendMessage(message).outcome()))
                 .isEqualTo(EmailSender.Outcome.FAILED);
         verifyNoInteractions(transport);
@@ -44,17 +50,17 @@ class EmailAdapterTest {
     @Test
     @CaseSpec(
             input = "SMTP发送器依次正常返回、抛认证失败、抛发送结果未知异常",
-            expected = "依次SENT、RETRY、UNKNOWN；SENT只代表SMTP接受，不代表最终收件")
+            expected = "依次SENT、FAILED、UNKNOWN；SENT只代表SMTP接受，不代表最终收件")
     void smtpOutcomesDistinguishAcceptanceRetryAndUncertainty() {
         settings.setEmailMode("smtp");
-        settings.setEmailFrom("sender@example.com");
+        settings.setEmailFrom("sender@qq.com");
         assertThat(actual(adapter.sendMessage(message).outcome()))
                 .isEqualTo(EmailSender.Outcome.SENT);
         doThrow(new MailAuthenticationException("test"))
                 .when(transport)
                 .send(any(SimpleMailMessage.class));
         assertThat(actual(adapter.sendMessage(message).outcome()))
-                .isEqualTo(EmailSender.Outcome.RETRY);
+                .isEqualTo(EmailSender.Outcome.FAILED);
         doThrow(new MailSendException("test")).when(transport).send(any(SimpleMailMessage.class));
         assertThat(actual(adapter.sendMessage(message).outcome()))
                 .isEqualTo(EmailSender.Outcome.UNKNOWN);
@@ -63,17 +69,17 @@ class EmailAdapterTest {
     @Test
     @CaseSpec(
             input =
-                    "smtp模式，MAIL_FROM=system@holiday.test；用户customer@holiday.test发给staff@holiday.test，主题Question、正文Hello",
+                    "smtp模式，MAIL_FROM=system@qq.com；用户customer@qq.com发给staff@qq.com，主题Question、正文Hello",
             expected = "SENT；SMTP From为系统地址、Reply-To为客户地址、To为员工地址，主题正文原样传递")
     void personalMailUsesAuthenticatedReplyToAndConfiguredFrom() {
         settings.setEmailMode("smtp");
-        settings.setEmailFrom("system@holiday.test");
+        settings.setEmailFrom("system@qq.com");
         assertThat(
                         actual(
                                 adapter.sendMessage(
                                                 new EmailSender.Message(
-                                                        "customer@holiday.test",
-                                                        "staff@holiday.test",
+                                                        "customer@qq.com",
+                                                        "staff@qq.com",
                                                         "Question",
                                                         "Hello"))
                                         .outcome()))
@@ -81,9 +87,9 @@ class EmailAdapterTest {
         var captured = org.mockito.ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(transport).send(captured.capture());
         var message = captured.getValue();
-        assertThat(actual(message.getFrom())).isEqualTo("system@holiday.test");
-        assertThat(actual(message.getReplyTo())).isEqualTo("customer@holiday.test");
-        assertThat(actual(message.getTo())).containsExactly("staff@holiday.test");
+        assertThat(actual(message.getFrom())).isEqualTo("system@qq.com");
+        assertThat(actual(message.getReplyTo())).isEqualTo("customer@qq.com");
+        assertThat(actual(message.getTo())).containsExactly("staff@qq.com");
         assertThat(actual(message.getSubject())).isEqualTo("Question");
         assertThat(actual(message.getText())).isEqualTo("Hello");
     }

@@ -1,0 +1,8 @@
+您好，{{name}}。
+
+预订编号：{{booking}}
+入住：{{checkIn}}
+离店：{{checkOut}}
+预订总额：CNY {{amount}}
+
+请凭预订信息联系酒店。此邮件由 Holiday Booking 酒店统一发信地址发送。

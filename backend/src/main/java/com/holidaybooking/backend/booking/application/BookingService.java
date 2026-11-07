@@ -249,8 +249,30 @@ public class BookingService {
         return view(booking);
     }
 
+    public record BookingSummary(
+            String id,
+            String userId,
+            String status,
+            LocalDate checkIn,
+            LocalDate checkOut,
+            String totalAmount,
+            String currency,
+            String contactName) {
+        static BookingSummary of(Booking b) {
+            return new BookingSummary(
+                    b.getId().toString(),
+                    b.getUserId().toString(),
+                    b.getStatus().name(),
+                    b.getCheckIn(),
+                    b.getCheckOut(),
+                    b.getTotalAmount().toPlainString(),
+                    "CNY",
+                    b.getContactName());
+        }
+    }
+
     @Transactional(readOnly = true)
-    public PageResult<BookingView> list(
+    public PageResult<BookingSummary> list(
             Long user, Booking.Status status, LocalDate from, LocalDate to, int page, int size) {
         int offset = PageResult.offset(page, size);
         if (from != null && to != null && from.isAfter(to)) {
@@ -258,7 +280,7 @@ public class BookingService {
         }
         return new PageResult<>(
                 bookings.list(user, status, from, to, offset, size).stream()
-                        .map(this::view)
+                        .map(BookingSummary::of)
                         .toList(),
                 page,
                 size,

@@ -7,7 +7,6 @@ import com.holidaybooking.backend.shared.domain.DomainException;
 import com.holidaybooking.backend.shared.infrastructure.JdbcTime;
 import java.time.Clock;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -16,10 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** 本地支付模拟器。渠道状态持久化，重启后仍能查询；仅在 local/test 配置下启用。 */
 @Component
-@Profile({"local", "test"})
-@ConditionalOnProperty(name = "booking.payment-mode", havingValue = "mock")
+@Profile({"local", "test", "sandbox"})
+@org.springframework.boot.autoconfigure.condition.ConditionalOnExpression(
+        "'${booking.payment-mode}' == 'mock' or '${booking.payment-mode}' == 'wiremock'")
 @RequiredArgsConstructor
-public class MockPaymentGateway implements PaymentGateway {
+public class PersistentSandboxGateway
+        implements PaymentGateway, com.holidaybooking.backend.payment.domain.SandboxChannel {
     private final JdbcClient jdbc;
     private final Clock clock;
     private final SandboxWalletRepository wallets;
@@ -92,6 +93,15 @@ public class MockPaymentGateway implements PaymentGateway {
                                 command.outTradeNo(),
                                 JdbcTime.write(clock.instant()))
                         .update();
+        if (changed > 0) {
+            jdbc.sql(
+                            "insert into sandbox_payment_event(out_trade_no,next_attempt_at,source_trace) values(?,?,?)")
+                    .params(
+                            command.outTradeNo(),
+                            JdbcTime.write(clock.instant().plusSeconds(2)),
+                            org.slf4j.MDC.get("traceId"))
+                    .update();
+        }
         if (changed == 0 && query(command).state() != State.PAID) {
             throw DomainException.conflict("MOCK_PAYMENT_STATE", "模拟支付不存在、已关闭或已到期");
         }

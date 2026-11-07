@@ -38,6 +38,39 @@ class ApiSecurityTest extends MySqlTestSupport {
 
     @Test
     @CaseSpec(
+            input =
+                    "Enabled STAFF and ADMIN sessions request GET /bookings, GET /payment-orders/1, POST /quotes with CSRF; public GET /room-types",
+            expected =
+                    "Customer business routes return 403 for both roles; public catalog remains 200")
+    void staffAndAdminCannotUseCustomerBusinessRoutes() throws Exception {
+        for (var role : new UserAccount.Role[] {UserAccount.Role.STAFF, UserAccount.Role.ADMIN}) {
+            long id =
+                    Long.parseLong(
+                            identity.register(
+                                            UUID.randomUUID() + "@example.com",
+                                            "test-password-123",
+                                            "Operator")
+                                    .id());
+            transactions.executeWithoutResult(status -> accounts.lock(id).changeRole(role));
+            for (String path : new String[] {"/api/v1/bookings", "/api/v1/payment-orders/1"}) {
+                mvc.perform(get(path).with(user(Long.toString(id)).roles(role.name())))
+                        .andDo(TestEvidence::http)
+                        .andExpect(status().isForbidden());
+            }
+            mvc.perform(
+                            post("/api/v1/quotes")
+                                    .with(user(Long.toString(id)).roles(role.name()))
+                                    .with(csrf())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content("{}"))
+                    .andDo(TestEvidence::http)
+                    .andExpect(status().isForbidden());
+        }
+        mvc.perform(get("/api/v1/room-types")).andDo(TestEvidence::http).andExpect(status().isOk());
+    }
+
+    @Test
+    @CaseSpec(
             input = "分别创建CUSTOMER、STAFF、ADMIN账户；使用正确密码先登录错误portalRole，再登录匹配portalRole",
             expected = "错误入口403和PORTAL_ROLE_MISMATCH，不授予会话；匹配入口200且返回数据库真实角色")
     void portalRoleIsCheckedBeforeCreatingSession() throws Exception {

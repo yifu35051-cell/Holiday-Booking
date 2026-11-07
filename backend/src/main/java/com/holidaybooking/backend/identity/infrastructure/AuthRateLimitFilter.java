@@ -13,6 +13,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class AuthRateLimitFilter extends OncePerRequestFilter {
+    @org.springframework.beans.factory.annotation.Value("${booking.trusted-edge-secret:}")
+    private String trustedEdgeSecret;
+
     private record Window(long minute, int count) {}
 
     private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
@@ -34,6 +37,17 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         }
         String address =
                 request.getRemoteAddr(); // Never trust an arbitrary X-Forwarded-For header.
+        String edge = request.getHeader("X-Holiday-Edge");
+        String client = request.getHeader("X-Holiday-Client");
+        if (trustedEdgeSecret != null
+                && trustedEdgeSecret.length() >= 32
+                && edge != null
+                && java.security.MessageDigest.isEqual(
+                        trustedEdgeSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                        edge.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+                && client != null
+                && client.length() <= 45
+                && client.matches("[0-9a-fA-F:.]+")) address = client;
         if (windows.size() > 5000 && !windows.containsKey(address)) {
             reject(response);
             return;
@@ -56,6 +70,12 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
         response.setStatus(429);
         response.setHeader("Retry-After", "60");
         response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":\"RATE_LIMITED\",\"message\":\"操作过于频繁，请稍后重试\"}");
+        response.setHeader(
+                "X-Trace-Id", java.util.Objects.toString(org.slf4j.MDC.get("traceId"), ""));
+        response.getWriter()
+                .write(
+                        "{\"code\":\"RATE_LIMITED\",\"message\":\"操作过于频繁，请稍后重试\",\"traceId\":\""
+                                + org.slf4j.MDC.get("traceId")
+                                + "\"}");
     }
 }

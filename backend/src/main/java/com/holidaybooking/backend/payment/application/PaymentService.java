@@ -21,6 +21,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentService {
+    private final RecoveryRepository recovery;
     private final PaymentRepository payments;
     private final IdentityRepository users;
     private final BookingService bookings;
@@ -157,6 +158,21 @@ public class PaymentService {
                     work.status() == PaymentAttempt.Status.CREATED
                             ? gateway.create(work.command())
                             : gateway.query(work.command());
+        } catch (PaymentChannelException failure) {
+            log.warn(
+                    "Payment channel deferred attempt={} reason={}",
+                    work.attempt(),
+                    failure.reason());
+            result =
+                    failure.reason() == PaymentChannelException.Reason.REJECTED
+                            ? new PaymentGateway.Result(
+                                    work.command().outTradeNo(),
+                                    PaymentGateway.State.CLOSED,
+                                    null,
+                                    null,
+                                    null,
+                                    null)
+                            : unknown(work);
         } catch (RuntimeException ex) {
             log.warn("Payment provider request failed attempt={}", work.attempt());
             result = unknown(work);
@@ -219,10 +235,11 @@ public class PaymentService {
     public OrderView authorizeSandbox(long user, long attemptId, String pin) {
         Work work = ownedAttempt(user, attemptId);
         requireProvider(work);
+        gateway.beforeAuthorize(work.command());
         wallet.pay(user, pin, work.command());
         // Channel debit has committed. If business confirmation fails, refresh/jobs can recover it
         // without a second debit, as with a real provider whose response was lost.
-        apply(work, gateway.query(work.command()));
+        if (!gateway.asynchronousConfirmation()) apply(work, gateway.query(work.command()));
         return get(user, work.order());
     }
 
@@ -230,7 +247,8 @@ public class PaymentService {
     public OrderView cancelAttempt(long user, long attemptId) {
         Work work = ownedAttempt(user, attemptId);
         requireProvider(work);
-        if (!gateway.provider().equals("MOCK")) throw DomainException.missing();
+        if (!Set.of("MOCK", "WIREMOCK").contains(gateway.provider()))
+            throw DomainException.missing();
         apply(work, gateway.close(work.command()));
         return get(user, work.order());
     }
@@ -247,6 +265,18 @@ public class PaymentService {
     }
 
     /** 此入口只接受适配器验签后的结果；浏览器返回页不能用于确认支付。 */
+    public void sandboxCallback(String outTradeNo) {
+        if (!gateway.provider().equals("WIREMOCK")) throw DomainException.missing();
+        Work event =
+                tx.execute(
+                        status -> {
+                            var attempt = payments.byOutTradeNo(outTradeNo);
+                            return work(payments.order(attempt.getPaymentOrderId()), attempt);
+                        });
+        requireProvider(Objects.requireNonNull(event));
+        apply(event, gateway.query(event.command()));
+    }
+
     public void callback(Map<String, String> parameters) {
         if (!gateway.provider().equals("ALIPAY_SANDBOX")) {
             throw DomainException.missing();
@@ -345,11 +375,18 @@ public class PaymentService {
                                     .toList();
                         });
         for (Work item : Objects.requireNonNull(work)) {
-            if (!item.provider().equals(gateway.provider())) {
+            if (!compatible(item.provider())) {
                 continue;
             }
             try {
                 var result = gateway.query(item.command());
+                // A lost create response can also mean the local channel never created its row.
+                // Reissue the same idempotent merchant command, never another trade/debit.
+                if (gateway.provider().equals("WIREMOCK")
+                        && result.state() == PaymentGateway.State.UNKNOWN
+                        && item.command().expiresAt().isAfter(clock.instant())) {
+                    result = gateway.create(item.command());
+                }
                 if (!item.command().expiresAt().isAfter(clock.instant())
                         && result.state() != PaymentGateway.State.PAID
                         && result.state() != PaymentGateway.State.CLOSED) {
@@ -394,10 +431,26 @@ public class PaymentService {
                     Objects.requireNonNull(
                             tx.execute(transactionStatus -> payments.pendingOrders(after, 100)));
             for (long id : ids) {
+                String recoveryKey = "PAYMENT:" + id;
+                if (!recovery.claim(recoveryKey, clock.instant())) continue;
+                boolean healthy = false, terminal = false;
                 try {
                     reconcile(id);
+                    var snapshot = tx.execute(status -> payments.order(id));
+                    terminal = snapshot.getStatus() != PaymentOrder.Status.PENDING;
+                    healthy =
+                            tx.execute(
+                                    status ->
+                                            payments.attempts(id).stream()
+                                                    .noneMatch(
+                                                            a ->
+                                                                    a.getStatus()
+                                                                            == PaymentAttempt.Status
+                                                                                    .UNKNOWN));
                 } catch (RuntimeException ex) {
-                    log.error("Payment recovery failed order={}", id, ex);
+                    log.warn("Payment recovery deferred order={}", id);
+                } finally {
+                    recovery.complete(recoveryKey, terminal, healthy, clock.instant());
                 }
             }
             if (ids.size() < 100) {
@@ -433,8 +486,13 @@ public class PaymentService {
         }
     }
 
+    private boolean compatible(String provider) {
+        return provider.equals(gateway.provider())
+                || (provider.equals("MOCK") && gateway.provider().equals("WIREMOCK"));
+    }
+
     private void requireProvider(Work work) {
-        if (!work.provider().equals(gateway.provider())) {
+        if (!compatible(work.provider())) {
             throw DomainException.unavailable("该支付记录所属渠道当前未启用");
         }
     }

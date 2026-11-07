@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { bookingApi } from '@/api/services'
-import type { Booking, Page } from '@/api/types'
+import type { BookingSummary, Page } from '@/api/types'
 import { useAuth, portal } from '@/stores/auth'
 import { useTask } from '@/composables/useTask'
 import { money, label } from '@/shared/format'
@@ -10,7 +10,7 @@ import PageNav from '@/components/PageNav.vue'
 const auth = useAuth(),
   administrative = computed(() => auth.user?.role !== 'CUSTOMER')
 const { busy, error, run } = useTask(),
-  data = ref<Page<Booking>>({ items: [], page: 0, size: 20, total: 0 })
+  data = ref<Page<BookingSummary>>({ items: [], page: 0, size: 20, total: 0 })
 const filters = reactive({ status: '', from: '', to: '', userId: '' })
 function load(page = 0) {
   void run(async () => {

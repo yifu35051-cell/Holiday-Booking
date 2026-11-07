@@ -7,18 +7,18 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 /** 离线沙箱收银台。旧的无密码 /dev/.../succeed 路由不再注册。 */
 @RestController
-@Profile({"local", "test"})
-@ConditionalOnProperty(name = "booking.payment-mode", havingValue = "mock")
+@Profile({"local", "test", "sandbox"})
+@org.springframework.boot.autoconfigure.condition.ConditionalOnExpression(
+        "'${booking.payment-mode}' == 'mock' or '${booking.payment-mode}' == 'wiremock'")
 @RequestMapping("/api/v1/sandbox")
 @RequiredArgsConstructor
-public class MockPaymentController {
+public class SandboxPaymentController {
     private final PaymentService payments;
     private final SandboxWalletService wallet;
 

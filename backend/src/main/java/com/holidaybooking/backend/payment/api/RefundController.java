@@ -1,7 +1,7 @@
 package com.holidaybooking.backend.payment.api;
 
 import com.holidaybooking.backend.payment.application.RefundService;
-import com.holidaybooking.backend.payment.domain.RefundRepository;
+import com.holidaybooking.backend.payment.application.RefundView;
 import com.holidaybooking.backend.shared.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -15,13 +15,12 @@ public class RefundController {
     private final RefundService refunds;
 
     @GetMapping("/{id}")
-    public ApiResponse<RefundRepository.Refund> get(Authentication auth, @PathVariable long id) {
-        return ApiResponse.of(refunds.get(Long.parseLong(auth.getName()), id));
+    public ApiResponse<RefundView> get(Authentication auth, @PathVariable long id) {
+        return ApiResponse.of(RefundView.of(refunds.get(Long.parseLong(auth.getName()), id)));
     }
 
     @PostMapping("/{id}/refresh")
-    public ApiResponse<RefundRepository.Refund> refresh(
-            Authentication auth, @PathVariable long id) {
-        return ApiResponse.of(refunds.refresh(Long.parseLong(auth.getName()), id));
+    public ApiResponse<RefundView> refresh(Authentication auth, @PathVariable long id) {
+        return ApiResponse.of(RefundView.of(refunds.refresh(Long.parseLong(auth.getName()), id)));
     }
 }

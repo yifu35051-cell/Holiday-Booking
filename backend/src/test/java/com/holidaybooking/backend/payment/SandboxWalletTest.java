@@ -249,11 +249,14 @@ class SandboxWalletTest extends BusinessTestSupport {
                         "CANCEL",
                         UUID.randomUUID().toString());
         var refund = change.refunds().getFirst();
-        assertThat(actual(refunds.refresh(user, refund.id()).state())).isEqualTo("SUCCEEDED");
-        refunds.refresh(user, refund.id());
+        assertThat(actual(refunds.refresh(user, Long.parseLong(refund.id())).state()))
+                .isEqualTo("SUCCEEDED");
+        refunds.refresh(user, Long.parseLong(refund.id()));
         gateway.refund(
                 new PaymentGateway.RefundCommand(
-                        refund.requestNo(), refund.outTradeNo(), refund.amount()));
+                        refund.requestNo(),
+                        refund.outTradeNo(),
+                        new java.math.BigDecimal(refund.amount())));
         assertThat(actual(wallet.get(user).balance())).isEqualTo("1000.00");
         assertThat(
                         actual(

@@ -28,7 +28,13 @@ public class ApplicationConfig {
     @Bean
     ApplicationRunner validateModes(BookingProperties properties, Environment environment) {
         return args -> {
-            if (!java.util.Set.of("mock", "disabled", "alipay-sandbox")
+            if (environment.acceptsProfiles(Profiles.of("sandbox"))) {
+                String edge = environment.getProperty("booking.trusted-edge-secret", "");
+                if (edge.length() < 32 || edge.startsWith("REPLACE_"))
+                    throw new IllegalStateException(
+                            "TRUSTED_EDGE_SECRET needs at least 32 random characters for the Docker edge");
+            }
+            if (!java.util.Set.of("mock", "wiremock", "disabled", "alipay-sandbox")
                             .contains(properties.getPaymentMode())
                     || !java.util.Set.of("log", "disabled", "smtp")
                             .contains(properties.getEmailMode())) {
@@ -40,14 +46,30 @@ public class ApplicationConfig {
                 throw new IllegalStateException(
                         "A positive email quota and MAIL_FROM for SMTP are required");
             }
+            if ("smtp".equals(properties.getEmailMode())) {
+                String host = environment.getProperty("spring.mail.host", "");
+                boolean local = java.util.Set.of("127.0.0.1", "localhost").contains(host);
+                boolean ssl =
+                        environment.getProperty(
+                                "spring.mail.properties.mail.smtp.ssl.enable",
+                                Boolean.class,
+                                false);
+                boolean tls =
+                        environment.getProperty(
+                                "spring.mail.properties.mail.smtp.starttls.required",
+                                Boolean.class,
+                                false);
+                if (!local && !ssl && !tls)
+                    throw new IllegalStateException("Remote SMTP requires TLS");
+            }
             if (properties.getReminderDays() == null
                     || properties.getReminderDays().isEmpty()
                     || properties.getReminderDays().stream()
                             .anyMatch(day -> day == null || (day != 1 && day != 3))) {
                 throw new IllegalStateException("提醒天数只能配置1或3，且不能为空");
             }
-            if ("mock".equals(properties.getPaymentMode())
-                    && !environment.acceptsProfiles(Profiles.of("local", "test"))) {
+            if (java.util.Set.of("mock", "wiremock").contains(properties.getPaymentMode())
+                    && !environment.acceptsProfiles(Profiles.of("local", "test", "sandbox"))) {
                 throw new IllegalStateException("模拟支付只能在local/test配置下启用");
             }
             if (properties.getHoldTtl().isNegative()

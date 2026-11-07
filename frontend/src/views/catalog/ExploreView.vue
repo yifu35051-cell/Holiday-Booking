@@ -53,6 +53,11 @@ function availability() {
   })
 }
 function getQuote() {
+  if (!auth.user) {
+    void router.push('/login/customer')
+    return
+  }
+  if (auth.user.role !== 'CUSTOMER') return
   void run(async () => {
     quote.value = await bookingApi.quote(stay.value)
   })

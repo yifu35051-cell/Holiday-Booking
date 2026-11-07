@@ -104,10 +104,11 @@ class BookingChangeTest extends BusinessTestSupport {
                         UUID.randomUUID().toString());
         assertThat(actual(nights(f.booking(), "BOOKED"))).isZero();
         var refund = result.refunds().getFirst();
-        assertThat(actual(refund.amount())).isEqualByComparingTo("200.10");
+        assertThat(actual(refund.amount())).isEqualTo("200.10");
         assertThat(actual(refund.state())).isEqualTo("PENDING");
-        assertThat(actual(refunds.refresh(f.user(), refund.id()).state())).isEqualTo("SUCCEEDED");
-        refunds.refresh(f.user(), refund.id());
+        assertThat(actual(refunds.refresh(f.user(), Long.parseLong(refund.id())).state()))
+                .isEqualTo("SUCCEEDED");
+        refunds.refresh(f.user(), Long.parseLong(refund.id()));
         assertThat(
                         actual(
                                 jdbc.sql("select count(*) from mock_refund where request_no=?")
@@ -144,7 +145,12 @@ class BookingChangeTest extends BusinessTestSupport {
                 .isEqualTo(2L);
         assertThatThrownBy(expectFailure(() -> changes.quoteCancellation(f.user(), f.booking())))
                 .isInstanceOf(DomainException.class);
-        assertThat(actual(refunds.refresh(f.user(), result.refunds().getFirst().id()).state()))
+        assertThat(
+                        actual(
+                                refunds.refresh(
+                                                f.user(),
+                                                Long.parseLong(result.refunds().getFirst().id()))
+                                        .state()))
                 .isEqualTo("SUCCEEDED");
         assertThat(actual(changes.quoteCancellation(f.user(), f.booking()).priceDifference()))
                 .isEqualTo("-100.05");
@@ -183,14 +189,19 @@ class BookingChangeTest extends BusinessTestSupport {
         assertThat(
                         actual(
                                 cancelled.refunds().stream()
-                                        .map(r -> r.amount())
+                                        .map(r -> new BigDecimal(r.amount()))
                                         .reduce(BigDecimal.ZERO, BigDecimal::add)))
                 .isEqualByComparingTo("300.15");
         cancelled
                 .refunds()
                 .forEach(
                         r ->
-                                assertThat(actual(refunds.refresh(f.user(), r.id()).state()))
+                                assertThat(
+                                                actual(
+                                                        refunds.refresh(
+                                                                        f.user(),
+                                                                        Long.parseLong(r.id()))
+                                                                .state()))
                                         .isEqualTo("SUCCEEDED"));
     }
 

@@ -20,7 +20,19 @@ public final class TestEvidence {
     }
 
     public static void record(String label, Object value) {
-        VALUES.get().add(label + ": " + String.valueOf(value));
+        VALUES.get().add(label + ": " + display(value));
+    }
+
+    private static String display(Object value) {
+        if (value instanceof jakarta.servlet.http.Cookie) return "Cookie 已返回（值隐藏）";
+        if (value != null && value.getClass().isArray()) {
+            var items = new ArrayList<String>();
+            for (int index = 0; index < java.lang.reflect.Array.getLength(value); index++) {
+                items.add(display(java.lang.reflect.Array.get(value, index)));
+            }
+            return items.toString();
+        }
+        return String.valueOf(value);
     }
 
     public static <T> T actual(T value) {

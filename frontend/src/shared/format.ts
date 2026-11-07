@@ -1,11 +1,20 @@
 export const money = (value: string | number) =>
   new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY' }).format(Number(value))
 export const time = (value?: string | null) =>
-  value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—'
+  value
+    ? new Date(value).toLocaleString('zh-CN', { hour12: false, timeZone: 'Asia/Shanghai' })
+    : '—'
 export const day = (offset = 1) => {
-  const d = new Date()
-  d.setDate(d.getDate() + offset)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const part = (type: string) => parts.find((p) => p.type === type)!.value
+  const calendar = new Date(`${part('year')}-${part('month')}-${part('day')}T00:00:00Z`)
+  calendar.setUTCDate(calendar.getUTCDate() + offset)
+  return calendar.toISOString().slice(0, 10)
 }
 const labels: Record<string, string> = {
   PENDING_PAYMENT: '待付款',

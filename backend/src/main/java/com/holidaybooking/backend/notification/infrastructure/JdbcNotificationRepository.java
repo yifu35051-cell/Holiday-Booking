@@ -30,7 +30,8 @@ public class JdbcNotificationRepository implements NotificationRepository {
                 rs.getInt("attempts"),
                 JdbcTime.read(rs, "due_at"),
                 rs.getString("lease_token"),
-                rs.getString("last_error"));
+                rs.getString("last_error"),
+                rs.getString("source_trace"));
     }
 
     public void schedule(
@@ -45,8 +46,8 @@ public class JdbcNotificationRepository implements NotificationRepository {
             String state) {
         jdbc.sql(
                         """
-                        insert into notification_task(booking_id,revision_number,task_type,recipient,subject,body,due_at,send_before,state,attempts,created_at)
-                        values(?,?,?,?,?,?,?,?,?,0,?)
+                        insert into notification_task(booking_id,revision_number,task_type,recipient,subject,body,due_at,send_before,state,attempts,created_at,source_trace)
+                        values(?,?,?,?,?,?,?,?,?,0,?,?)
                         """)
                 .params(
                         booking,
@@ -58,7 +59,8 @@ public class JdbcNotificationRepository implements NotificationRepository {
                         JdbcTime.write(due),
                         sendBefore == null ? null : JdbcTime.write(sendBefore),
                         state,
-                        JdbcTime.write(clock.instant()))
+                        JdbcTime.write(clock.instant()),
+                        org.slf4j.MDC.get("traceId"))
                 .update();
     }
 

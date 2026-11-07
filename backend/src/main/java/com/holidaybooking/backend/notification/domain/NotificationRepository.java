@@ -17,7 +17,8 @@ public interface NotificationRepository {
             int attempts,
             Instant dueAt,
             String leaseToken,
-            String lastError) {}
+            String lastError,
+            String sourceTrace) {}
 
     void schedule(
             long booking,

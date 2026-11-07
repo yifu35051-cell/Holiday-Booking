@@ -11,9 +11,21 @@ const rows = ref<PaymentException[]>([]),
   selected = ref<PaymentException | null>(null),
   note = ref(''),
   { busy, error, success, run } = useTask()
+const recoveryRows = ref<Awaited<ReturnType<typeof managementApi.recovery>>>([])
 async function load(p = page.value) {
-  rows.value = await managementApi.exceptions(p)
+  const [exceptions, recovery] = await Promise.all([
+    managementApi.exceptions(p),
+    managementApi.recovery(),
+  ])
+  rows.value = exceptions
+  recoveryRows.value = recovery
   page.value = p
+}
+function releaseRecovery(key: string) {
+  void run(async () => {
+    await managementApi.releaseRecovery(key)
+    await load()
+  }, '已重新开放自动核验；此操作不会直接确认付款或退款。')
 }
 onMounted(() => run(() => load()))
 
@@ -40,6 +52,15 @@ function selectException(item: PaymentException) {
     <button :disabled="busy" @click="run(() => load())">刷新</button>
   </div>
   <TaskNotice :busy="busy" :error="error" :success="success" />
+  <section class="panel">
+    <h2>需要人工介入的渠道恢复</h2>
+    <p>先检查渠道故障原因，再重新开放重试。重试沿用原交易号，不会创建新的扣款。</p>
+    <p v-if="!recoveryRows.length" class="empty">暂无超过自动重试预算的任务。</p>
+    <div v-for="item in recoveryRows" :key="item.key" class="row spread">
+      <span>{{ item.key }} · 失败 {{ item.failures }} 次 · {{ time(item.nextAttemptAt) }}</span>
+      <button :disabled="busy" @click="releaseRecovery(item.key)">重新开放核验</button>
+    </div>
+  </section>
   <section class="panel">
     <div class="table-wrap">
       <table>

@@ -23,6 +23,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class NotificationService {
     private final NotificationRepository tasks;
     private final EmailSender sender;
+    private final com.holidaybooking.backend.mail.domain.MailTemplate template;
     private final BookingProperties settings;
     private final Clock clock;
     private final TransactionTemplate tx;
@@ -40,17 +41,18 @@ public class NotificationService {
             BigDecimal amount) {
         Instant now = clock.instant();
         String content =
-                "您好，"
-                        + name
-                        + "。\n预订编号："
-                        + booking
-                        + "\n入住："
-                        + checkIn
-                        + "\n离店："
-                        + checkOut
-                        + "\n预订总额：CNY "
-                        + amount.toPlainString()
-                        + "\n请凭预订信息联系酒店。";
+                template.render(
+                        Map.of(
+                                "name",
+                                name,
+                                "booking",
+                                Long.toString(booking),
+                                "checkIn",
+                                checkIn.toString(),
+                                "checkOut",
+                                checkOut.toString(),
+                                "amount",
+                                amount.toPlainString()));
         tasks.schedule(
                 booking,
                 revision,
@@ -127,7 +129,11 @@ public class NotificationService {
         }
 
         EmailSender.Result result;
-        try {
+        try (var trace =
+                org.slf4j.MDC.putCloseable(
+                        "traceId",
+                        java.util.Objects.toString(
+                                task.sourceTrace(), java.util.UUID.randomUUID().toString()))) {
             result =
                     sender.sendMessage(
                             new EmailSender.Message(

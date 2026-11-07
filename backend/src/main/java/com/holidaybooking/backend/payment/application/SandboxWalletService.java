@@ -25,6 +25,9 @@ public class SandboxWalletService {
     private final IdentityRepository users;
     private final PasswordEncoder passwords;
     private final PaymentGateway gateway;
+    private final org.springframework.beans.factory.ObjectProvider<
+                    com.holidaybooking.backend.payment.domain.SandboxChannel>
+            channels;
     private final OperationStore operations;
     private final TransactionTemplate tx;
     private final Clock clock;
@@ -134,7 +137,8 @@ public class SandboxWalletService {
                 user,
                 pin,
                 () -> {
-                    var result = gateway.query(command);
+                    var channel = channels.getObject();
+                    var result = channel.query(command);
                     var prior = wallets.byReference("PAYMENT:" + command.outTradeNo());
                     // The trade number is the debit idempotency key, including retries after lost
                     // responses.
@@ -157,7 +161,7 @@ public class SandboxWalletService {
                                 "SANDBOX_INSUFFICIENT_FUNDS", "沙箱余额不足，请先模拟充值");
                     // Both use this same database transaction. A failed/closed channel rolls back
                     // the debit.
-                    gateway.simulate(command);
+                    channel.simulate(command);
                     wallets.post(
                             user,
                             "PAYMENT",
@@ -235,7 +239,8 @@ public class SandboxWalletService {
     }
 
     private void enabled() {
-        if (!gateway.provider().equals("MOCK")) throw DomainException.missing();
+        if (!Set.of("MOCK", "WIREMOCK").contains(gateway.provider()))
+            throw DomainException.missing();
     }
 
     private void audit(long user, String action) {

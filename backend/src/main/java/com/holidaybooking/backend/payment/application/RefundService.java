@@ -17,6 +17,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 @Slf4j
 public class RefundService {
+    private final RecoveryRepository recovery;
     private final RefundRepository refunds;
     private final PaymentGateway gateway;
     private final IdentityRepository users;
@@ -34,7 +35,8 @@ public class RefundService {
     public RefundRepository.Refund refresh(long user, long id) {
         var refund = get(user, id);
         if (refund.state().equals("SUCCEEDED")) return refund;
-        if (!refund.provider().equals(gateway.provider())) {
+        if (!refund.provider().equals(gateway.provider())
+                && !(refund.provider().equals("MOCK") && gateway.provider().equals("WIREMOCK"))) {
             throw DomainException.unavailable("退款所属渠道当前未启用");
         }
         PaymentGateway.RefundState result;
@@ -76,11 +78,16 @@ public class RefundService {
             long after = cursor;
             var ids = Objects.requireNonNull(tx.execute(status -> refunds.pending(after, 100)));
             for (long id : ids) {
+                String recoveryKey = "REFUND:" + id;
+                if (!recovery.claim(recoveryKey, clock.instant())) continue;
+                boolean terminal = false;
                 try {
                     var refund = Objects.requireNonNull(tx.execute(status -> refunds.get(id)));
-                    refresh(refund.userId(), id);
+                    terminal = refresh(refund.userId(), id).state().equals("SUCCEEDED");
                 } catch (RuntimeException failure) {
                     log.warn("Refund recovery deferred refund={}", id);
+                } finally {
+                    recovery.complete(recoveryKey, terminal, terminal, clock.instant());
                 }
             }
             if (ids.size() < 100) break;

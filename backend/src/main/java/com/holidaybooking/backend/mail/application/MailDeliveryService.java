@@ -50,10 +50,20 @@ public class MailDeliveryService {
                                         id,
                                         now,
                                         now.atZone(settings.getZone()).toLocalDate(),
-                                        settings.getEmailDailyLimit()));
+                                        Math.max(
+                                                0,
+                                                settings.getEmailDailyLimit()
+                                                        - Math.max(
+                                                                1,
+                                                                settings.getEmailDailyLimit()
+                                                                        / 5))));
         if (work == null) return;
         EmailSender.Result result;
-        try {
+        try (var trace =
+                org.slf4j.MDC.putCloseable(
+                        "traceId",
+                        java.util.Objects.toString(
+                                work.sourceTrace(), java.util.UUID.randomUUID().toString()))) {
             result =
                     sender.sendMessage(
                             new EmailSender.Message(

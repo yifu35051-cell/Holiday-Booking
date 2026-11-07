@@ -33,6 +33,14 @@ public interface PaymentGateway {
 
     String provider();
 
+    /** Network authorization check, called before taking a wallet/database lock. */
+    default void beforeAuthorize(Command command) {}
+
+    /** Durable channel event scheduling after the debit commits. */
+    default boolean asynchronousConfirmation() {
+        return false;
+    }
+
     Result create(Command command);
 
     Result query(Command command);

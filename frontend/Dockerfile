@@ -8,6 +8,9 @@ RUN node node_modules/vue-tsc/bin/vue-tsc.js --build \
     && node node_modules/vite/bin/vite.js build
 
 FROM nginx/nginx-unprivileged:stable-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+ENV NGINX_ENVSUBST_OUTPUT_DIR=/tmp/nginx-conf
+ENV NGINX_ENVSUBST_FILTER=TRUSTED_EDGE_SECRET
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+COPY nginx-main.conf /etc/nginx/nginx.conf
 COPY --from=build /build/dist /usr/share/nginx/html
 EXPOSE 8080

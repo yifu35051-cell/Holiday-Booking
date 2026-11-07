@@ -3,6 +3,7 @@ import { useAuth, portal } from '@/stores/auth'
 import type { Role } from '@/api/types'
 const roles: Role[] = ['CUSTOMER', 'STAFF', 'ADMIN']
 const routes: RouteRecordRaw[] = [
+  { path: '/explore', component: () => import('@/views/catalog/ExploreView.vue') },
   { path: '/', component: () => import('@/views/auth/EntryView.vue') },
   { path: '/unavailable', component: () => import('@/views/auth/UnavailableView.vue') },
   ...roles.map((role) => ({

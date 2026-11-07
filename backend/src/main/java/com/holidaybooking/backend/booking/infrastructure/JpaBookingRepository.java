@@ -95,41 +95,54 @@ public class JpaBookingRepository implements BookingRepository {
     }
 
     public List<BookingRoom> rooms(long bookingId) {
+        // Fetch all nightly snapshots in one query instead of one query for each room.
+        var nights =
+                jdbc
+                        .sql(
+                                """
+                select n.* from booking_nightly_price n
+                join booking_room br on br.id=n.booking_room_id
+                join booking_revision rev on rev.id=br.revision_id
+                join booking b on b.id=rev.booking_id and b.current_revision=rev.revision_number
+                where b.id=? order by br.id,n.stay_date
+                """)
+                        .param(bookingId)
+                        .query(
+                                (rs, row) ->
+                                        Map.entry(
+                                                rs.getLong("booking_room_id"),
+                                                new QuoteSnapshot.NightPrice(
+                                                        rs.getDate("stay_date").toLocalDate(),
+                                                        rs.getBigDecimal("base_price")
+                                                                .toPlainString(),
+                                                        rs.getBigDecimal("payable_price")
+                                                                .toPlainString())))
+                        .list()
+                        .stream()
+                        .collect(
+                                java.util.stream.Collectors.groupingBy(
+                                        Map.Entry::getKey,
+                                        java.util.stream.Collectors.mapping(
+                                                Map.Entry::getValue,
+                                                java.util.stream.Collectors.toList())));
         return jdbc.sql(
                         """
-                        select br.* from booking_room br join booking_revision rev on br.revision_id=rev.id
-                        join booking b on rev.booking_id=b.id and rev.revision_number=b.current_revision where b.id=? order by br.id
-                        """)
+                select br.* from booking_room br join booking_revision rev on br.revision_id=rev.id
+                join booking b on rev.booking_id=b.id and rev.revision_number=b.current_revision
+                where b.id=? order by br.id
+                """)
                 .param(bookingId)
                 .query(
-                        (rs, n) -> {
-                            long line = rs.getLong("id");
-                            var nights =
-                                    jdbc.sql(
-                                                    "select * from booking_nightly_price where"
-                                                            + " booking_room_id=? order by stay_date")
-                                            .param(line)
-                                            .query(
-                                                    (nightRow, i) ->
-                                                            new QuoteSnapshot.NightPrice(
-                                                                    nightRow.getDate("stay_date")
-                                                                            .toLocalDate(),
-                                                                    nightRow.getBigDecimal(
-                                                                                    "base_price")
-                                                                            .toPlainString(),
-                                                                    nightRow.getBigDecimal(
-                                                                                    "payable_price")
-                                                                            .toPlainString()))
-                                            .list();
-                            return new BookingRoom(
-                                    Long.toString(rs.getLong("room_id")),
-                                    rs.getString("room_number"),
-                                    new QuoteSnapshot.RoomPrice(
-                                            Long.toString(rs.getLong("room_type_id")),
-                                            rs.getString("room_type_name"),
-                                            rs.getInt("guests"),
-                                            nights));
-                        })
+                        (rs, row) ->
+                                new BookingRoom(
+                                        Long.toString(rs.getLong("room_id")),
+                                        rs.getString("room_number"),
+                                        new QuoteSnapshot.RoomPrice(
+                                                Long.toString(rs.getLong("room_type_id")),
+                                                        rs.getString("room_type_name"),
+                                                rs.getInt("guests"),
+                                                        nights.getOrDefault(
+                                                                rs.getLong("id"), List.of()))))
                 .list();
     }
 

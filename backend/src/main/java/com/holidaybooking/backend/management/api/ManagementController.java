@@ -177,7 +177,7 @@ public class ManagementController {
     }
 
     @GetMapping("/bookings")
-    public ApiResponse<PageResult<BookingService.BookingView>> list(
+    public ApiResponse<PageResult<BookingService.BookingSummary>> list(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) Booking.Status status,
             @RequestParam(required = false) LocalDate from,

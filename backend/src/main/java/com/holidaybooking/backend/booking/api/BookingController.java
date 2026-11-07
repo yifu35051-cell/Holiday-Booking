@@ -75,7 +75,7 @@ public class BookingController {
     }
 
     @GetMapping("/bookings")
-    public ApiResponse<PageResult<BookingService.BookingView>> list(
+    public ApiResponse<PageResult<BookingService.BookingSummary>> list(
             Authentication auth,
             @RequestParam(required = false) Booking.Status status,
             @RequestParam(required = false) LocalDate from,

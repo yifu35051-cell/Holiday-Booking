@@ -79,9 +79,9 @@ export interface Booking {
   rooms: { roomId: string; roomNumber: string; price: RoomPrice }[]
 }
 export interface Refund {
-  id: string | number
+  id: string
   state: string
-  amount: string | number
+  amount: string
   requestNo: string
   detail: string | null
 }
@@ -193,7 +193,7 @@ export interface PaymentException {
   id: string
   payment_order_id: string
   attempt_id: string
-  received_amount: string | number | null
+  received_amount: string | null
   reason?: string
   status?: string
   detail?: string
@@ -215,3 +215,8 @@ export interface WalletEntry {
   balanceAfter: string
   createdAt: string
 }
+
+export type BookingSummary = Pick<
+  Booking,
+  'id' | 'userId' | 'status' | 'checkIn' | 'checkOut' | 'totalAmount' | 'currency' | 'contactName'
+>

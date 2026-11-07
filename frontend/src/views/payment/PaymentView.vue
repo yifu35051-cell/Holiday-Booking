@@ -29,9 +29,26 @@ const pending = computed(() =>
   payment.value?.attempts.some((a) => ['CREATED', 'PENDING', 'UNKNOWN'].includes(a.status)),
 )
 let timer: ReturnType<typeof setInterval> | undefined
+let ticks = 0
+let polling = false
 onMounted(() => {
   timer = setInterval(() => {
     now.value = Date.now()
+    ticks++
+    if (ticks % 3 === 0 && payable.value && pending.value && !busy.value && !polling) {
+      polling = true
+      void paymentApi
+        .get(id)
+        .then((result) => {
+          payment.value = result
+        })
+        .catch(() => {
+          /* Manual query remains available after a temporary network failure. */
+        })
+        .finally(() => {
+          polling = false
+        })
+    }
   }, 1000)
   void run(async () => {
     payment.value = await paymentApi.get(id)
@@ -74,7 +91,7 @@ function authorize() {
       pin.value = ''
       await walletPanel.value?.reload().catch(() => {})
     }
-  }, '付款结果已更新，可返回预订或会员页面查看。')
+  }, '授权已提交，正在等待渠道确认；页面会自动更新，也可点击查询支付结果。')
 }
 function cancel(attempt: Attempt) {
   void run(async () => {
@@ -112,9 +129,11 @@ function cancel(attempt: Attempt) {
         <label
           >付款方式<select v-model="method">
             <option value="Alipay">
-              {{ payment.provider === 'MOCK' ? '模拟支付宝' : '支付宝沙箱' }}
+              {{ ['MOCK', 'WIREMOCK'].includes(payment.provider) ? '模拟支付宝' : '支付宝沙箱' }}
             </option>
-            <option v-if="payment.provider === 'MOCK'" value="Wechat">模拟微信</option>
+            <option v-if="['MOCK', 'WIREMOCK'].includes(payment.provider)" value="Wechat">
+              模拟微信
+            </option>
           </select></label
         >
         <button class="primary" :disabled="busy || pending">创建支付请求</button>
@@ -122,7 +141,7 @@ function cancel(attempt: Attempt) {
       <p v-if="pending">已有在途交易，请在下方确认付款、取消当前交易或查询结果。</p>
     </section>
     <SandboxWalletPanel
-      v-if="payment.provider === 'MOCK'"
+      v-if="['MOCK', 'WIREMOCK'].includes(payment.provider)"
       ref="walletPanel"
       @change="wallet = $event"
     />
@@ -163,7 +182,7 @@ function cancel(attempt: Attempt) {
         <p v-if="attempt.paidAt">支付时间 {{ time(attempt.paidAt) }}</p>
         <div
           v-if="
-            attempt.provider === 'MOCK' &&
+            ['MOCK', 'WIREMOCK'].includes(attempt.provider) &&
             ['CREATED', 'PENDING', 'UNKNOWN'].includes(attempt.status) &&
             payable
           "
@@ -178,7 +197,10 @@ function cancel(attempt: Attempt) {
           </button>
           <button :disabled="busy" @click="cancel(attempt)">取消当前交易</button>
         </div>
-        <p v-else-if="attempt.checkoutUrl && attempt.provider !== 'MOCK'" class="hint">
+        <p
+          v-else-if="attempt.checkoutUrl && !['MOCK', 'WIREMOCK'].includes(attempt.provider)"
+          class="hint"
+        >
           渠道支付内容：{{ attempt.checkoutUrl }}
         </p>
       </article>

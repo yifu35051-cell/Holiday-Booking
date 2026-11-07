@@ -46,7 +46,7 @@ public class BookingChangeService {
             Instant expiresAt,
             String paymentOrderId,
             QuoteSnapshot proposedStay,
-            List<RefundRepository.Refund> refunds) {}
+            List<com.holidaybooking.backend.payment.application.RefundView> refunds) {}
 
     @Transactional
     public View quoteCancellation(long user, long bookingId) {
@@ -354,6 +354,8 @@ public class BookingChangeService {
                 change.quoteId() == null
                         ? null
                         : codec.decode(bookings.quote(change.quoteId()).getSnapshot()),
-                refunds.forChange(change.id()));
+                refunds.forChange(change.id()).stream()
+                        .map(com.holidaybooking.backend.payment.application.RefundView::of)
+                        .toList());
     }
 }

@@ -72,7 +72,8 @@ public class SecurityConfig {
                                         .csrfTokenRequestHandler(
                                                 new CsrfTokenRequestAttributeHandler())
                                         .ignoringRequestMatchers(
-                                                "/api/v1/payment-callbacks/alipay"))
+                                                "/api/v1/payment-callbacks/alipay",
+                                                "/api/v1/payment-callbacks/wiremock"))
                 .authorizeHttpRequests(
                         a ->
                                 a.requestMatchers(
@@ -89,13 +90,26 @@ public class SecurityConfig {
                                                 HttpMethod.POST,
                                                 "/api/v1/auth/register",
                                                 "/api/v1/auth/login",
-                                                "/api/v1/payment-callbacks/alipay")
+                                                "/api/v1/payment-callbacks/alipay",
+                                                "/api/v1/payment-callbacks/wiremock")
                                         .permitAll()
                                         .requestMatchers(
+                                                "/actuator/metrics/**",
                                                 "/swagger-ui/**",
                                                 "/swagger-ui.html",
                                                 "/v3/api-docs/**")
                                         .hasRole("ADMIN")
+                                        .requestMatchers(
+                                                "/api/v1/quotes/**",
+                                                "/api/v1/bookings/**",
+                                                "/api/v1/booking-changes/**",
+                                                "/api/v1/payments/**",
+                                                "/api/v1/payment-orders/**",
+                                                "/api/v1/refunds/**",
+                                                "/api/v1/sandbox/**",
+                                                "/api/v1/membership/purchases/**",
+                                                "/api/v1/membership/me")
+                                        .hasRole("CUSTOMER")
                                         .requestMatchers("/api/v1/admin/**")
                                         .hasAnyRole("STAFF", "ADMIN")
                                         .anyRequest()

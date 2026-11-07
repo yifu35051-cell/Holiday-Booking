@@ -46,7 +46,8 @@ public interface MailRepository {
             String subject,
             String body,
             int attempts,
-            String leaseToken) {}
+            String leaseToken,
+            String sourceTrace) {}
 
     long create(
             long sender,
